@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	ospdirectorv1beta1 "github.com/abays/osp-director-operator/api/v1beta1"
-	provisionserver "github.com/abays/osp-director-operator/pkg/provisionserver"
+	provisionserver "github.com/abays/osp-director-operator/provisionserver"
 	"github.com/openstack-k8s-operators/lib-common/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
