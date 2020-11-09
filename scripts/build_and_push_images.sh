@@ -4,7 +4,7 @@ set -ex
 #
 # Builds and pushes operator, bundle and index images for a given version of an operator
 #
-# NOTE: Requires opm and operator-sdk to be installed!
+# NOTE: Requires yq, opm and operator-sdk to be installed!
 #
 
 VERSION=${1:-"0.0.1"}
@@ -22,9 +22,9 @@ IMG=${IMG} make docker-build docker-push
 
 # Bundle image
 VERSION=${VERSION} IMG=${IMG} make bundle
-yq '. | .spec.installModes=[{"type":"OwnNamespace","supported":true},{"type":"SingleNamespace","supported":true},{"type":"MultiNamespace","supported":true},{"type":"AllNamespaces","supported":true}]' \
-config/manifests/bases/${OP_NAME}.clusterserviceversion.yaml -yri
 yq '. | .spec.replaces=""'  bundle/manifests/${OP_NAME}.clusterserviceversion.yaml -yri
+# HACK/FIXME: Use kustomize instead for the next 'yq' call
+yq '. | .spec.install.spec.deployments[0].spec.template.spec.containers[1].env=[{"name": "OPERATOR_TEMPLATES", "value": "/"}]'  bundle/manifests/${OP_NAME}.clusterserviceversion.yaml -yri
 VERSION=${IMG} BUNDLE_IMG=${BUNDLE_IMG} make bundle-build
 podman push ${BUNDLE_IMG}
 

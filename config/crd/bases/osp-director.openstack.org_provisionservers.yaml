@@ -42,6 +42,8 @@ spec:
               type: string
             port:
               type: integer
+            rhelImageUrl:
+              type: string
           required:
           - port
           type: object

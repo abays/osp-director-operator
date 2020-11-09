@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	ospdirectorv1beta1 "github.com/abays/osp-director-operator/api/v1beta1"
-	provisionserver "github.com/abays/osp-director-operator/provisionserver"
+	provisionserver "github.com/abays/osp-director-operator/pkg/provisionserver"
 	"github.com/openstack-k8s-operators/lib-common/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +43,12 @@ type ProvisionServerReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=osp-director.openstack.org,resources=provisionservers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=osp-director.openstack.org,resources=provisionservers/finalizers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osp-director.openstack.org,resources=provisionservers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;create;update;delete;watch;
+// +kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=get;list;create;update;delete;watch;
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;delete;watch;
+// +kubebuilder:rbac:groups=core,resources=volumes,verbs=get;list;create;update;delete;watch;
 
 func (r *ProvisionServerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
@@ -123,6 +128,16 @@ func (r *ProvisionServerReconciler) deploymentCreateOrUpdate(instance *ospdirect
 			Name:      instance.Name,
 			Namespace: instance.Namespace,
 		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"deployment": instance.Name + "-deployment"},
+				},
+			},
+		},
 	}
 
 	op, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, deployment, func() error {
@@ -148,19 +163,23 @@ func (r *ProvisionServerReconciler) deploymentCreateOrUpdate(instance *ospdirect
 
 		replicas := int32(1)
 		falseVar := false
+		trueVar := true
 
 		deployment.Spec.Replicas = &replicas
-		deployment.Spec.Template.Spec.HostNetwork = true
-		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-			RunAsNonRoot: &falseVar,
-		}
 		deployment.Spec.Template.Spec = corev1.PodSpec{
+			HostNetwork: true,
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsNonRoot: &falseVar,
+			},
 			Volumes: volumes,
 			Containers: []corev1.Container{
 				{
-					Name:         "osp-httpd",
-					Image:        "quay.io/abays/httpd:2.4-alpine",
-					Env:          []corev1.EnvVar{},
+					Name:  "osp-httpd",
+					Image: "quay.io/abays/httpd:2.4-alpine",
+					Env:   []corev1.EnvVar{},
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: &trueVar,
+					},
 					VolumeMounts: volumeMounts,
 				},
 			},
@@ -168,7 +187,7 @@ func (r *ProvisionServerReconciler) deploymentCreateOrUpdate(instance *ospdirect
 
 		initContainerDetails := provisionserver.InitContainer{
 			ContainerImage: "quay.io/abays/downloader:latest",
-			RhelImageURL:   "http://172.22.0.1/images/rhel-guest-image-8.3-417.x86_64.qcow2.gz",
+			RhelImageURL:   instance.Spec.RhelImageURL,
 			Privileged:     true,
 			VolumeMounts:   initVolumeMounts,
 		}

@@ -29,8 +29,9 @@ type ProvisionServerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of ProvisionServer. Edit ProvisionServer_types.go to remove/update
-	Foo  string `json:"foo,omitempty"`
-	Port int    `json:"port"`
+	Foo          string `json:"foo,omitempty"`
+	Port         int    `json:"port"`
+	RhelImageURL string `json:"rhelImageUrl,omitempty"`
 }
 
 // ProvisionServerStatus defines the observed state of ProvisionServer
