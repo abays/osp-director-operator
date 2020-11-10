@@ -42,6 +42,15 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - volumes
   verbs:
   - create
@@ -50,6 +59,13 @@ rules:
   - list
   - update
   - watch
+- apiGroups:
+  - machine.openshift.io
+  - machineconfiguration.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
 - apiGroups:
   - osp-director.openstack.org
   resources:

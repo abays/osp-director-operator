@@ -49,6 +49,8 @@ type ProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=get;list;create;update;delete;watch;
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;delete;watch;
 // +kubebuilder:rbac:groups=core,resources=volumes,verbs=get;list;create;update;delete;watch;
+// +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;update;watch;
+// +kubebuilder:rbac:groups=machine.openshift.io;machineconfiguration.openshift.io,resources="*",verbs="*"
 
 func (r *ProvisionServerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
