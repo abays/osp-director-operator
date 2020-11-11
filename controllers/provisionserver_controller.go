@@ -19,9 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +31,8 @@ import (
 
 	ospdirectorv1beta1 "github.com/abays/osp-director-operator/api/v1beta1"
 	provisionserver "github.com/abays/osp-director-operator/pkg/provisionserver"
+	metal3valpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	machinev1beta1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
 	"github.com/openstack-k8s-operators/lib-common/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,7 +58,8 @@ type ProvisionServerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=volumes,verbs=get;list;create;update;delete;watch;
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;update;watch;
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;update;watch;
-// +kubebuilder:rbac:groups=machine.openshift.io;machineconfiguration.openshift.io,resources="*",verbs="*"
+// +kubebuilder:rbac:groups=machine.openshift.io,resources="*",verbs="*"
+// +kubebuilder:rbac:groups=metal3.io,resources="*",verbs="*"
 
 func (r *ProvisionServerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
@@ -99,40 +104,26 @@ func (r *ProvisionServerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		r.Log.Info(fmt.Sprintf("Deployment %s successfully reconciled - operation: %s", instance.Name, string(op)))
 	}
 
-	// Get the pod associated with the deployment
-	labelSelectorString := labels.Set(map[string]string{
-		"deployment": instance.Name + "-provisionserver-deployment",
-	}).String()
-
-	podList, err := r.Kclient.CoreV1().Pods(instance.Namespace).List(
-		context.TODO(),
-		metav1.ListOptions{
-			LabelSelector: labelSelectorString,
-		},
-	)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if len(podList.Items) < 1 {
-		r.Log.Info(fmt.Sprintf("Deployment %s pod not yet available, requeuing and waiting", instance.Name))
-		return ctrl.Result{}, err
-	} else if len(podList.Items) > 1 {
-		err := fmt.Errorf("Expected 1 pod for %s deployment, got %d", instance.Name, len(podList.Items))
-		r.Log.Error(err, "Invalid pod count")
-		return ctrl.Result{}, err
-	}
-
-	pod := podList.Items[0]
-	r.Log.Info(fmt.Sprintf("Found pod %s on node %s", pod.Name, pod.Spec.NodeName))
-
-	node, err := r.Kclient.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+	// Get the
+	podIP, err := r.getProvisionServerProvisioningIP(instance)
 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	r.Log.Info(fmt.Sprintf("Found node %s on machine %s", node.Name, node.Annotations["machine.openshift.io/machine"]))
+	if podIP == "" {
+		r.Log.Info(fmt.Sprintf("Deployment %s pod provisioning IP not yet available, requeuing and waiting", instance.Name))
+		return ctrl.Result{}, err
+	}
+
+	// Update Status
+	instance.Status.ProvisiongServerIP = podIP
+	err = r.Client.Status().Update(context.TODO(), instance)
+
+	if err != nil {
+		r.Log.Error(err, "Failed to update CR status %v")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -188,25 +179,6 @@ func (r *ProvisionServerReconciler) deploymentCreateOrUpdate(instance *ospdirect
 
 	op, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, deployment, func() error {
 
-		// Daemonset selector is immutable so we set this value only if
-		// a new object is going to be created
-		// if deployment.ObjectMeta.CreationTimestamp.IsZero() {
-		// 	deployment.Spec.Selector = &metav1.LabelSelector{
-		// 		MatchLabels: common.GetLabels(instance.Name, cinderapi.AppLabel),
-		// 	}
-		// }
-
-		// if len(deployment.Spec.Template.Spec.Containers) != 1 {
-		// 	deployment.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
-		// }
-		// envs := util.MergeEnvs(deployment.Spec.Template.Spec.Containers[0].Env, envVars)
-
-		// // labels
-		// common.InitLabelMap(&deployment.Spec.Template.Labels)
-		// for k, v := range common.GetLabels(instance.Name, cinderapi.AppLabel) {
-		// 	deployment.Spec.Template.Labels[k] = v
-		// }
-
 		replicas := int32(1)
 		falseVar := false
 		trueVar := true
@@ -250,4 +222,81 @@ func (r *ProvisionServerReconciler) deploymentCreateOrUpdate(instance *ospdirect
 	})
 
 	return op, err
+}
+
+func (r *ProvisionServerReconciler) getProvisionServerProvisioningIP(instance *ospdirectorv1beta1.ProvisionServer) (string, error) {
+	// Get the pod associated with the deployment
+	labelSelectorString := labels.Set(map[string]string{
+		"deployment": instance.Name + "-provisionserver-deployment",
+	}).String()
+
+	podList, err := r.Kclient.CoreV1().Pods(instance.Namespace).List(
+		context.TODO(),
+		metav1.ListOptions{
+			LabelSelector: labelSelectorString,
+		},
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(podList.Items) < 1 {
+		return "", nil
+	} else if len(podList.Items) > 1 {
+		err := fmt.Errorf("Expected 1 pod for %s deployment, got %d", instance.Name, len(podList.Items))
+		r.Log.Error(err, "Invalid pod count")
+		return "", err
+	}
+
+	pod := podList.Items[0]
+	r.Log.Info(fmt.Sprintf("Found pod %s on node %s", pod.Name, pod.Spec.NodeName))
+
+	// Get node on which pod is scheduled
+	node, err := r.Kclient.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+
+	if err != nil {
+		return "", err
+	}
+
+	machineName := strings.Split(node.ObjectMeta.Annotations["machine.openshift.io/machine"], "/")[1]
+
+	r.Log.Info(fmt.Sprintf("Found node %s on machine %s", node.Name, machineName))
+
+	// Get machine associated with node
+	machine := &machinev1beta1.Machine{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: machineName, Namespace: "openshift-machine-api"}, machine)
+
+	if err != nil {
+		return "", err
+	}
+
+	bmhName := strings.Split(machine.ObjectMeta.Annotations["metal3.io/BareMetalHost"], "/")[1]
+
+	r.Log.Info(fmt.Sprintf("Found machine %s on bare metal host %s", machine.Name, bmhName))
+
+	// Get baremetalhost associated with machine
+	bmh := &metal3valpha1.BareMetalHost{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: bmhName, Namespace: "openshift-machine-api"}, bmh)
+
+	if err != nil {
+		return "", err
+	}
+
+	r.Log.Info(fmt.Sprintf("Found bare metal host %s", bmh.Name))
+
+	// Get baremetalhost's provisioning IP by using its spec's "bootMACAddress" and finding
+	// the nic in its status with that MAC address
+	provMAC := bmh.Spec.BootMACAddress
+	provIP := ""
+
+	for _, nic := range bmh.Status.HardwareDetails.NIC {
+		if nic.MAC == provMAC {
+			provIP = nic.IP
+			r.Log.Info(fmt.Sprintf("Found provisioning IP %s on bare metal host %s", provIP, bmh.Name))
+			break
+		}
+	}
+
+	return provIP, nil
 }

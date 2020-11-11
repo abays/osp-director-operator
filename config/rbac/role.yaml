@@ -70,7 +70,12 @@ rules:
   - watch
 - apiGroups:
   - machine.openshift.io
-  - machineconfiguration.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - metal3.io
   resources:
   - '*'
   verbs:

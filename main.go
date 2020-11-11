@@ -31,6 +31,8 @@ import (
 
 	ospdirectorv1beta1 "github.com/abays/osp-director-operator/api/v1beta1"
 	"github.com/abays/osp-director-operator/controllers"
+	metal3valpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	machinev1beta1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
 	"github.com/prometheus/common/log"
 	// +kubebuilder:scaffold:imports
 )
@@ -44,6 +46,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(ospdirectorv1beta1.AddToScheme(scheme))
+	utilruntime.Must(metal3valpha1.AddToScheme(scheme))
+	utilruntime.Must(machinev1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

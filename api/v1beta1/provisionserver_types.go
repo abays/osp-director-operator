@@ -36,8 +36,8 @@ type ProvisionServerSpec struct {
 
 // ProvisionServerStatus defines the observed state of ProvisionServer
 type ProvisionServerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Provisioning IP of underlying Apache web server hosting images
+	ProvisiongServerIP string `json:"provisioningServerIp,omitempty"`
 }
 
 // +kubebuilder:object:root=true
