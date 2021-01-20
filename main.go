@@ -180,11 +180,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "OvercloudIPSet")
 		os.Exit(1)
 	}
-	if err = (&ospdirectoropenstackorgv1beta1.BaremetalSet{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "BaremetalSet")
-		os.Exit(1)
+
+	if strings.ToLower(os.Getenv("ENABLE_WEBHOOKS")) != "false" {
+		if err = (&ospdirectoropenstackorgv1beta1.BaremetalSet{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "BaremetalSet")
+			os.Exit(1)
+		}
+		// +kubebuilder:scaffold:builder
 	}
-	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
