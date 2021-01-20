@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -44,7 +46,7 @@ func (r *BaremetalSet) ValidateCreate() error {
 	baremetalsetlog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
-	return nil
+	return fmt.Errorf("NOOOOOOOOOOOOOOOOOOOO")
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
