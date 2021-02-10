@@ -308,8 +308,31 @@ func (r *VMSetReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// Generate new host NetworkData first, if necessary
 	for i := 0; i < newVmsNeededCount; i++ {
-		if err := generateNetworkData(instance, ""); err != nil {
-			return ctrl.Result{}, err
+		// Handle case where someone has deleted one or more VirtualMachine
+		// resources out from underneath us: reuse one of deleted hostnames
+		// here instead of asking for a new one
+		foundMissingExisting := false
+
+		if len(instance.Status.VMHosts) != len(existingVirtualMachines) {
+			for vmHost := range instance.Status.VMHosts {
+				if _, ok := existingVirtualMachines[vmHost]; !ok {
+					foundMissingExisting = true
+					// Add this host to the existing VirtualMachines so that it is not considered
+					// for other missing hosts
+					existingVirtualMachines[vmHost] = vmHost
+					r.Log.Info(fmt.Sprintf("Reusing deleted hostname \"%s\" from VMSet \"%s\" for new VirtualMachine", vmHost, instance.Name))
+					break
+				}
+			}
+		}
+
+		// If the "reuse" logic above found an existing host name to reuse, then skip generating
+		// the network data here, as the reused host will be handled in the "existing host" network
+		// data generation loop below
+		if !foundMissingExisting {
+			if err := generateNetworkData(instance, ""); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
