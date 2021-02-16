@@ -1,0 +1,16 @@
+# This should NOT be needed, but kuttl seems to be failing to clean-up resources
+# apiVersion: kuttl.dev/v1beta1
+# kind: TestStep
+# delete:
+# - apiVersion: osp-director.openstack.org/v1beta1
+#   kind: ControlPlane
+#   name: overcloud
+#   namespace: openstack
+# - apiVersion: osp-director.openstack.org/v1beta1
+#   kind: VMSet
+#   name: controller
+#   namespace: openstack
+# - apiVersion: osp-director.openstack.org/v1beta1
+#   kind: OvercloudNet
+#   name: ctlplane
+#   namespace: openstack
