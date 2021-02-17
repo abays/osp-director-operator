@@ -9,13 +9,9 @@ kind: VirtualMachine
 metadata:
   name: controller-0
   namespace: openstack
-status:
-  created: true
 ---
 apiVersion: kubevirt.io/v1alpha3
 kind: VirtualMachine
 metadata:
   name: controller-1
   namespace: openstack
-status:
-  created: true

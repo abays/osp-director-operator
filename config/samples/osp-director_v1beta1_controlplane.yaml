@@ -7,7 +7,7 @@ spec:
   openStackClientImageURL: quay.io/openstack-k8s-operators/tripleo-deploy:latest
   controller:
     Role: Controller
-    controllerCount: 1
+    controllerCount: 0
     cores: 2
     memory: 20
     diskSize: 50

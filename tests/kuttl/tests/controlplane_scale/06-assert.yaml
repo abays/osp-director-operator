@@ -1,0 +1,21 @@
+#
+# Check for:
+#
+# - OvercloudNet (should be preserved with all historical reservations)
+#
+
+apiVersion: osp-director.openstack.org/v1beta1
+kind: OvercloudNet
+metadata:
+  name: ctlplane
+  namespace: openstack
+status:
+  reservations:
+    - hostname: openstackclient-0
+      ip: 192.168.25.100
+    - hostname: controller-0
+      ip: 192.168.25.101
+    - hostname: controller-1
+      ip: 192.168.25.102
+    - hostname: controller-2
+      ip: 192.168.25.103

@@ -29,9 +29,7 @@ status:
   vmHosts:
     controller-2:
       hostname: controller-2
-      # VMSet VMs and their associated OpenstackClient Pod acquire IPs nondeterministically,
-      # so we cannot check this here
-      # ipaddress: 192.168.25.103/24
+      ipaddress: 192.168.25.103/24
 ---
 apiVersion: kubevirt.io/v1alpha3
 kind: VirtualMachine
@@ -45,7 +43,6 @@ status:
   created: true
   ready: true
 ---
-# All 4 IPs should still be reserved
 apiVersion: osp-director.openstack.org/v1beta1
 kind: OvercloudNet
 metadata:
@@ -53,12 +50,15 @@ metadata:
   namespace: openstack
 status:
   reservations:
-  - ip: 192.168.25.100
-  - ip: 192.168.25.101
-  - ip: 192.168.25.102
-  - ip: 192.168.25.103
+    - hostname: openstackclient-0
+      ip: 192.168.25.100
+    - hostname: controller-0
+      ip: 192.168.25.101
+    - hostname: controller-1
+      ip: 192.168.25.102
+    - hostname: controller-2
+      ip: 192.168.25.103
 ---
-# Can't check for IPs here as assignments are nondeterministic
 apiVersion: osp-director.openstack.org/v1beta1
 kind: OvercloudIPSet
 metadata:
@@ -71,3 +71,14 @@ spec:
   networks:
   - ctlplane
   role: controller
+status:
+  hosts:
+    controller-0:
+      ipaddresses:
+        ctlplane: 192.168.25.101/24
+    controller-1:
+      ipaddresses:
+        ctlplane: 192.168.25.102/24
+    controller-2:
+      ipaddresses:
+        ctlplane: 192.168.25.103/24
