@@ -1,0 +1,22 @@
+apiVersion: sriovnetwork.openshift.io/v1
+kind: SriovNetworkNodePolicy
+metadata:
+  name: {{ .Network }}-policy
+  namespace: openshift-sriov-network-operator
+spec:
+  deviceType: {{ .SriovDeviceType }}
+  mtu: {{ .SriovMtu }}
+  nicSelector:
+{{- if .SriovRootDevice }}
+    rootDevices:
+    - {{ .SriovRootDevice }}
+{{- end }}
+    pfNames:
+    - {{ .SriovPort }}
+  nodeSelector:
+{{- range $label, $selector := .NodeSriovConfigurationPolicyNodeSelector }}
+    {{ $label }}: "{{ $selector }}"
+{{- end }}
+  numVfs: {{ .SriovNumVfs }}
+  priority: 5
+  resourceName: {{ .Network }}sriovnics
