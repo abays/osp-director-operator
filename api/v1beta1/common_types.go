@@ -28,12 +28,30 @@ type Hash struct {
 	Hash string `json:"hash,omitempty"`
 }
 
-// Network - OSP network to create NodeNetworkConfigurationPolicy and NetworkAttachmentDefinition
+// Network - OSP network to create NodeNetworkConfigurationPolicy and NetworkAttachmentDefinition, or NodeSriovConfigurationPolicy
 // TODO: that might change depending on our outcome of network config
 type Network struct {
 	Name                           string                                        `json:"name"`
-	BridgeName                     string                                        `json:"bridgeName"`
+	BridgeName                     string                                        `json:"bridgeName,omitempty"`
 	NodeNetworkConfigurationPolicy nmstateapi.NodeNetworkConfigurationPolicySpec `json:"nodeNetworkConfigurationPolicy,omitempty"`
+	NodeSriovConfigurationPolicy   NodeSriovConfigurationPolicy                  `json:"nodeSriovConfigurationPolicy,omitempty"`
+}
+
+// NodeSriovConfigurationPolicy - Node selector and desired state for SRIOV network
+type NodeSriovConfigurationPolicy struct {
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	DesiredState SriovState        `json:"desiredState,omitempty"`
+}
+
+// SriovState - SRIOV-specific configuration details for an OSP network
+type SriovState struct {
+	Port       string `json:"port"`
+	RootDevice string `json:"rootDevice,omitempty"`
+	// +kubebuilder:default=9000
+	Mtu    uint32 `json:"mtu,omitempty"`
+	NumVfs uint32 `json:"numVfs"`
+	// +kubebuilder:default=vfio-pci
+	DeviceType string `json:"deviceType,omitempty"`
 }
 
 // HostStatus represents the hostname and IP info for a specific VM
