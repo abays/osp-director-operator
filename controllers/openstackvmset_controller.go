@@ -646,6 +646,14 @@ func (r *OpenStackVMSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.PersistentVolumeClaim{}).
 		Owns(&virtv1.VirtualMachine{}).
 		Owns(&networkv1.NetworkAttachmentDefinition{}).
+		Watches(&source.Kind{Type: &sriovnetworkv1.SriovNetwork{}},
+			&handler.EnqueueRequestsFromMapFunc{
+				ToRequests: sriovNetworkFn,
+			}).
+		Watches(&source.Kind{Type: &sriovnetworkv1.SriovNetworkNodePolicy{}},
+			&handler.EnqueueRequestsFromMapFunc{
+				ToRequests: sriovNetworkNodePolicyFn,
+			}).
 		Complete(r)
 }
 
