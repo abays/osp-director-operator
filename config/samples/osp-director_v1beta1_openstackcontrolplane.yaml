@@ -16,4 +16,4 @@ spec:
       storageClass: host-nfs-storageclass
       baseImageVolumeName: openstack-base-img #optional
       networks:
-        - ctlplane
+      - ctlplane
