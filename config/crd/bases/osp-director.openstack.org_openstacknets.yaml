@@ -93,6 +93,11 @@ spec:
                             type: string
                           rootDevice:
                             type: string
+                          spoofCheck:
+                            default: true
+                            type: boolean
+                          trust:
+                            type: boolean
                         required:
                         - numVfs
                         - port

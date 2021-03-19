@@ -248,7 +248,7 @@ func IPToBigInt(IPv6Addr net.IP) *big.Int {
 
 // IPSet - ipset details
 type IPSet struct {
-	Networks            map[string]string
+	Networks            []string
 	Role                string
 	HostCount           int
 	AddToPredictableIPs bool

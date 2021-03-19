@@ -401,10 +401,8 @@ func (in *OpenStackBaremetalSetSpec) DeepCopyInto(out *OpenStackBaremetalSetSpec
 	out.HardwareReqs = in.HardwareReqs
 	if in.Networks != nil {
 		in, out := &in.Networks, &out.Networks
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 
@@ -511,10 +509,8 @@ func (in *OpenStackClientSpec) DeepCopyInto(out *OpenStackClientSpec) {
 	}
 	if in.Networks != nil {
 		in, out := &in.Networks, &out.Networks
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 
@@ -739,10 +735,8 @@ func (in *OpenStackIPSetSpec) DeepCopyInto(out *OpenStackIPSetSpec) {
 	*out = *in
 	if in.Networks != nil {
 		in, out := &in.Networks, &out.Networks
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 
@@ -1033,10 +1027,8 @@ func (in *OpenStackVMSetSpec) DeepCopyInto(out *OpenStackVMSetSpec) {
 	*out = *in
 	if in.Networks != nil {
 		in, out := &in.Networks, &out.Networks
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 
@@ -1082,10 +1074,8 @@ func (in *OpenStackVirtualMachineRoleSpec) DeepCopyInto(out *OpenStackVirtualMac
 	*out = *in
 	if in.Networks != nil {
 		in, out := &in.Networks, &out.Networks
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 

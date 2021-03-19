@@ -4,33 +4,46 @@ import (
 	"context"
 
 	sriovnetworkv1 "github.com/openshift/sriov-network-operator/api/v1"
+	"github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GetSriovNetworksWithLabel - Returns list of sriovnetworks labeled with labelSelector
-func GetSriovNetworksWithLabel(c client.Client, labelSelector map[string]string, namespace string) (*sriovnetworkv1.SriovNetworkList, error) {
+func GetSriovNetworksWithLabel(r common.ReconcilerCommon, labelSelector map[string]string, namespace string) (map[string]sriovnetworkv1.SriovNetwork, error) {
 	sriovNetworks := &sriovnetworkv1.SriovNetworkList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(labelSelector),
 	}
-	if err := c.List(context.Background(), sriovNetworks, listOpts...); err != nil {
+	if err := r.GetClient().List(context.Background(), sriovNetworks, listOpts...); err != nil {
 		return nil, err
 	}
 
-	return sriovNetworks, nil
+	networkMap := map[string]sriovnetworkv1.SriovNetwork{}
+
+	for _, network := range sriovNetworks.Items {
+		networkMap[network.Name] = network
+	}
+
+	return networkMap, nil
 }
 
 // GetSriovNetworkNodePoliciesWithLabel - Returns list of sriovnetworknodepolicies labeled with labelSelector
-func GetSriovNetworkNodePoliciesWithLabel(c client.Client, labelSelector map[string]string, namespace string) (*sriovnetworkv1.SriovNetworkNodePolicyList, error) {
+func GetSriovNetworkNodePoliciesWithLabel(r common.ReconcilerCommon, labelSelector map[string]string, namespace string) (map[string]sriovnetworkv1.SriovNetworkNodePolicy, error) {
 	sriovNetworkNodePolicies := &sriovnetworkv1.SriovNetworkNodePolicyList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(labelSelector),
 	}
-	if err := c.List(context.Background(), sriovNetworkNodePolicies, listOpts...); err != nil {
+	if err := r.GetClient().List(context.Background(), sriovNetworkNodePolicies, listOpts...); err != nil {
 		return nil, err
 	}
 
-	return sriovNetworkNodePolicies, nil
+	policyMap := map[string]sriovnetworkv1.SriovNetworkNodePolicy{}
+
+	for _, policy := range sriovNetworkNodePolicies.Items {
+		policyMap[policy.Name] = policy
+	}
+
+	return policyMap, nil
 }

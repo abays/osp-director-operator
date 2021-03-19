@@ -48,11 +48,11 @@ spec:
                 description: HostCount Host count
                 type: integer
               networks:
-                additionalProperties:
-                  type: string
                 description: Networks the name(s) of the OpenStackNetworks used to
-                  generate IPs, and what type of connection is desired ("" or "sriov")
-                type: object
+                  generate IPs
+                items:
+                  type: string
+                type: array
               roleName:
                 description: RoleName the name of the TripleO role this VM Spec is
                   associated with. If it is a TripleO role, the name must match.
@@ -139,6 +139,11 @@ spec:
                                   type: string
                                 rootDevice:
                                   type: string
+                                spoofCheck:
+                                  default: true
+                                  type: boolean
+                                trust:
+                                  type: boolean
                               required:
                               - numVfs
                               - port

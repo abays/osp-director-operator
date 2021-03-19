@@ -47,13 +47,16 @@ type NodeSriovConfigurationPolicy struct {
 
 // SriovState - SRIOV-specific configuration details for an OSP network
 type SriovState struct {
-	Port       string `json:"port"`
-	RootDevice string `json:"rootDevice,omitempty"`
-	// +kubebuilder:default=9000
-	Mtu    uint32 `json:"mtu,omitempty"`
-	NumVfs uint32 `json:"numVfs"`
 	// +kubebuilder:default=vfio-pci
 	DeviceType string `json:"deviceType,omitempty"`
+	// +kubebuilder:default=9000
+	Mtu        uint32 `json:"mtu,omitempty"`
+	NumVfs     uint32 `json:"numVfs"`
+	Port       string `json:"port"`
+	RootDevice string `json:"rootDevice,omitempty"`
+	// +kubebuilder:default=true
+	SpoofCheck bool `json:"spoofCheck,omitempty"`
+	Trust      bool `json:"trust,omitempty"`
 }
 
 // OpenStackNetSpec defines the desired state of OpenStackNet

@@ -40,8 +40,8 @@ type OpenStackBaremetalSetSpec struct {
 	BmhLabelSelector map[string]string `json:"bmhLabelSelector,omitempty"`
 	// Hardware requests for sub-selection of BaremetalHosts with certain hardware specs
 	HardwareReqs HardwareReqs `json:"hardwareReqs,omitempty"`
-	// Networks the name(s) of the OpenStackNetworks used to generate IPs, and what type of connection is desired ("" or "sriov")
-	Networks map[string]string `json:"networks"`
+	// Networks the name(s) of the OpenStackNetworks used to generate IPs
+	Networks []string `json:"networks"`
 	// RoleName the name of the TripleO role this VM Spec is associated with. If it is a TripleO role, the name must match.
 	RoleName string `json:"roleName"`
 	// PasswordSecret the name of the secret used to optionally set the root pwd by adding

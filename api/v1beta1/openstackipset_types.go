@@ -23,8 +23,8 @@ import (
 // OpenStackIPSetSpec defines the desired state of OpenStackIPSet
 type OpenStackIPSetSpec struct {
 
-	// Networks the name(s) of the OpenStackNetworks used to generate IPs, and what type of connection is desired ("" or "sriov")
-	Networks map[string]string `json:"networks"`
+	// Networks the name(s) of the OpenStackNetworks used to generate IPs
+	Networks []string `json:"networks"`
 
 	// RoleName the name of the TripleO role this VM Spec is associated with. If it is a TripleO role, the name must match.
 	RoleName string `json:"roleName"`

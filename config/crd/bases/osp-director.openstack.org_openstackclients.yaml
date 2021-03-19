@@ -67,11 +67,11 @@ spec:
                 description: Name of the image
                 type: string
               networks:
-                additionalProperties:
-                  type: string
                 description: Networks the name(s) of the OpenStackNetworks used to
-                  generate IPs, and what type of connection is desired ("" or "sriov")
-                type: object
+                  generate IPs
+                items:
+                  type: string
+                type: array
             required:
             - cloudName
             - deploymentSSHSecret

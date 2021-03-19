@@ -216,6 +216,16 @@ func (r *OpenStackNetReconciler) ensureSriov(instance *ospdirectorv1beta1.OpenSt
 		labelSelector[k] = v
 	}
 
+	spoofChk := "on"
+	trust := "off"
+
+	if !instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.SpoofCheck {
+		spoofChk = "off"
+	}
+	if instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.Trust {
+		spoofChk = "on"
+	}
+
 	sriovNet := &sriovnetworkv1.SriovNetwork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-sriov-network", instance.Name),
@@ -223,9 +233,9 @@ func (r *OpenStackNetReconciler) ensureSriov(instance *ospdirectorv1beta1.OpenSt
 			Labels:    labelSelector,
 		},
 		Spec: sriovnetworkv1.SriovNetworkSpec{
-			SpoofChk:         "off",
-			Trust:            "on",
-			ResourceName:     fmt.Sprintf("%s-sriovnics", instance.Name),
+			SpoofChk:         spoofChk,
+			Trust:            trust,
+			ResourceName:     fmt.Sprintf("%s_sriovnics", instance.Name),
 			NetworkNamespace: instance.Namespace,
 		},
 	}
@@ -254,12 +264,17 @@ func (r *OpenStackNetReconciler) ensureSriov(instance *ospdirectorv1beta1.OpenSt
 			DeviceType: instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.DeviceType,
 			Mtu:        int(instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.Mtu),
 			NicSelector: sriovnetworkv1.SriovNetworkNicSelector{
-				PfNames:     []string{instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.Port},
-				RootDevices: []string{instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.RootDevice},
+				PfNames: []string{instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.Port},
 			},
-			NumVfs:   int(instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.NumVfs),
-			Priority: 5,
+			NodeSelector: instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.NodeSelector,
+			NumVfs:       int(instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.NumVfs),
+			Priority:     5,
+			ResourceName: fmt.Sprintf("%s_sriovnics", instance.Name),
 		},
+	}
+
+	if instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.RootDevice != "" {
+		sriovPolicy.Spec.NicSelector.RootDevices = []string{instance.Spec.AttachConfiguration.NodeSriovConfigurationPolicy.DesiredState.RootDevice}
 	}
 
 	op, err = controllerutil.CreateOrUpdate(context.TODO(), r.Client, sriovPolicy, func() error {
@@ -287,13 +302,13 @@ func (r *OpenStackNetReconciler) sriovResourceCleanup(instance *ospdirectorv1bet
 	}
 
 	// Delete sriovnetworks in openshift-sriov-network-operator namespace
-	sriovNetworks, err := openstacknet.GetSriovNetworksWithLabel(r.Client, labelSelectorMap, "openshift-sriov-network-operator")
+	sriovNetworks, err := openstacknet.GetSriovNetworksWithLabel(r, labelSelectorMap, "openshift-sriov-network-operator")
 
 	if err != nil {
 		return err
 	}
 
-	for _, sn := range sriovNetworks.Items {
+	for _, sn := range sriovNetworks {
 		err = r.Client.Delete(context.Background(), &sn, &client.DeleteOptions{})
 
 		if err != nil {
@@ -304,13 +319,13 @@ func (r *OpenStackNetReconciler) sriovResourceCleanup(instance *ospdirectorv1bet
 	}
 
 	// Delete sriovnetworknodepolicies in openshift-sriov-network-operator namespace
-	sriovNetworkNodePolicies, err := openstacknet.GetSriovNetworkNodePoliciesWithLabel(r.Client, labelSelectorMap, "openshift-sriov-network-operator")
+	sriovNetworkNodePolicies, err := openstacknet.GetSriovNetworkNodePoliciesWithLabel(r, labelSelectorMap, "openshift-sriov-network-operator")
 
 	if err != nil {
 		return err
 	}
 
-	for _, snnp := range sriovNetworkNodePolicies.Items {
+	for _, snnp := range sriovNetworkNodePolicies {
 		err = r.Client.Delete(context.Background(), &snnp, &client.DeleteOptions{})
 
 		if err != nil {

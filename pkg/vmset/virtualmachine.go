@@ -17,6 +17,8 @@ limitations under the License.
 package vmset
 
 import (
+	"fmt"
+
 	virtv1 "kubevirt.io/client-go/api/v1"
 )
 
@@ -27,11 +29,18 @@ type NetSetter func(*virtv1.Network)
 type NetSetterMap map[string]NetSetter
 
 // Network - create additional multus virtv1.Network
-func Network(networkName string) NetSetter {
+func Network(networkName string, bindingMethod string) NetSetter {
 	return func(net *virtv1.Network) {
 		net.Name = networkName
+		actualNetworkName := networkName
+
+		if bindingMethod == "sriov" {
+			// SRIOV networks use "<network>-sriov-network" format for the actual network name
+			actualNetworkName = fmt.Sprintf("%s-sriov-network", networkName)
+		}
+
 		net.NetworkSource.Multus = &virtv1.MultusNetwork{
-			NetworkName: networkName,
+			NetworkName: actualNetworkName,
 		}
 	}
 }
