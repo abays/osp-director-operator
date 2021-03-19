@@ -36,6 +36,24 @@ type IPReservation struct {
 type NetworkConfiguration struct {
 	BridgeName                     string                                        `json:"bridgeName,omitempty"`
 	NodeNetworkConfigurationPolicy nmstateapi.NodeNetworkConfigurationPolicySpec `json:"nodeNetworkConfigurationPolicy,omitempty"`
+	NodeSriovConfigurationPolicy   NodeSriovConfigurationPolicy                  `json:"nodeSriovConfigurationPolicy,omitempty"`
+}
+
+// NodeSriovConfigurationPolicy - Node selector and desired state for SRIOV network
+type NodeSriovConfigurationPolicy struct {
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	DesiredState SriovState        `json:"desiredState,omitempty"`
+}
+
+// SriovState - SRIOV-specific configuration details for an OSP network
+type SriovState struct {
+	Port       string `json:"port"`
+	RootDevice string `json:"rootDevice,omitempty"`
+	// +kubebuilder:default=9000
+	Mtu    uint32 `json:"mtu,omitempty"`
+	NumVfs uint32 `json:"numVfs"`
+	// +kubebuilder:default=vfio-pci
+	DeviceType string `json:"deviceType,omitempty"`
 }
 
 // OpenStackNetSpec defines the desired state of OpenStackNet

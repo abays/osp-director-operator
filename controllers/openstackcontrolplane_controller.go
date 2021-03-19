@@ -249,7 +249,8 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(req ctrl.Request) (ctrl.Resu
 		openstackclient.Spec.DeploymentSSHSecret = deploymentSecretName
 		openstackclient.Spec.CloudName = instance.Name
 		// openstackclient pod is only connected to the ctlplane network
-		openstackclient.Spec.Networks = []string{"ctlplane"}
+		// TODO: Support SRIOV connections here?
+		openstackclient.Spec.Networks = map[string]string{"ctlplane": ""}
 		openstackclient.Spec.HostAliases = common.HostAliasesFromPodlist(controllerPodList)
 
 		err := controllerutil.SetControllerReference(instance, openstackclient, r.Scheme)
