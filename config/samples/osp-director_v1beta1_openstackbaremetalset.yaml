@@ -12,8 +12,8 @@ spec:
   deploymentSSHSecret: osp-baremetalset-ssh-keys
   # Networks to associate with this host
   networks:
-    - ctlplane
-    - tenant
+    ctlplane: ""
+    tenant: ""
   roleName: Compute
   # PasswordSecret the name of the secret used to optionally set the root pwd by adding
   # NodeRootPassword: <base64 enc pwd>

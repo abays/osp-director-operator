@@ -63,14 +63,26 @@ type InterfaceSetter func(*virtv1.Interface)
 // InterfaceSetterMap -
 type InterfaceSetterMap map[string]InterfaceSetter
 
-// Interface - create additional Intercface, ATM only bridge
-func Interface(ifName string) InterfaceSetter {
+// Interface - create additional Interface
+func Interface(ifName, bindingMethod string) InterfaceSetter {
 	return func(iface *virtv1.Interface) {
 		iface.Name = ifName
-		iface.Model = "virtio"
-		iface.InterfaceBindingMethod = virtv1.InterfaceBindingMethod{
-			Bridge: &virtv1.InterfaceBridge{},
+
+		model := "virtio"
+
+		// We currently support SRIOV and bridge interfaces, with anything other than "sriov" indicating a bridge
+		if bindingMethod == "sriov" {
+			model = ""
+			iface.InterfaceBindingMethod = virtv1.InterfaceBindingMethod{
+				SRIOV: &virtv1.InterfaceSRIOV{},
+			}
+		} else {
+			iface.InterfaceBindingMethod = virtv1.InterfaceBindingMethod{
+				Bridge: &virtv1.InterfaceBridge{},
+			}
 		}
+
+		iface.Model = model
 	}
 }
 

@@ -67,11 +67,11 @@ spec:
                 format: int32
                 type: integer
               networks:
-                description: Networks the name(s) of the OpenStackNetworks used to
-                  generate IPs
-                items:
+                additionalProperties:
                   type: string
-                type: array
+                description: Networks the name(s) of the OpenStackNetworks used to
+                  generate IPs, and what type of connection is desired ("" or "sriov")
+                type: object
               passwordSecret:
                 description: 'PasswordSecret the name of the secret used to optionally
                   set the root pwd by adding NodeRootPassword: <base64 enc pwd> to

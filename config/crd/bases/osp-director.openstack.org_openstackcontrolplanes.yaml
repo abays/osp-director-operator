@@ -77,11 +77,12 @@ spec:
                       format: int32
                       type: integer
                     networks:
-                      description: Networks the name(s) of the OpenStackNetworks used
-                        to generate IPs
-                      items:
+                      additionalProperties:
                         type: string
-                      type: array
+                      description: Networks the name(s) of the OpenStackNetworks used
+                        to generate IPs, and what type of connection is desired (""
+                        or "sriov")
+                      type: object
                     roleCount:
                       description: Number of VMs for the role
                       type: integer
