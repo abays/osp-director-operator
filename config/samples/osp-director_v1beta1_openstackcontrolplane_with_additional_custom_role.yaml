@@ -16,7 +16,7 @@ spec:
       storageClass: host-nfs-storageclass
       baseImageVolumeName: openstack-base-img #optional
       networks:
-        ctlplane: ""
+        - ctlplane
     somecustomrole:
       roleName: SomeCustomRole
       isTripleoRole: false
@@ -28,4 +28,4 @@ spec:
       storageClass: host-nfs-storageclass
       #baseImageVolumeName: #optional
       networks:
-        ctlplane: ""
+        - ctlplane

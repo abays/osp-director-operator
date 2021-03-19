@@ -6,6 +6,6 @@ spec:
   hostCount: 1
   roleName: Controller
   networks:
-    ctlplane: ""
-    storage: ""
-    tenant: ""
+    - ctlplane
+    - storage
+    - tenant

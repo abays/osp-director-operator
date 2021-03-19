@@ -14,5 +14,5 @@ spec:
   deploymentSSHSecret: osp-controlplane-ssh-keys
   isTripleoRole: true
   networks:
-    ctlplane: ""
+    - ctlplane
   roleName: Controller
