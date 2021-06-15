@@ -333,31 +333,45 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	desiredVms := 0
-	readyVms := 0
-	provisionedVMSets := 0
-
-	for _, role := range instance.Spec.VirtualMachineRoles {
-		desiredVms += role.RoleCount
-	}
+	var ctlPlaneState ospdirectorv1beta1.ControlPlaneProvisioningState
+	var reasonMsg string
+	vmSetStateCounts := map[ospdirectorv1beta1.VMSetProvisioningState]int{}
 
 	for _, vmSet := range vmSets {
-		readyVms += vmSet.Status.ProvisioningStatus.ReadyCount
-		if vmSet.Status.ProvisioningStatus.State == ospdirectorv1beta1.VMSetProvisioned || vmSet.Status.ProvisioningStatus.State == ospdirectorv1beta1.VMSetEmpty {
-			provisionedVMSets++
+		if vmSet.Status.ProvisioningStatus.State == ospdirectorv1beta1.VMSetError {
+			// An error overrides all aggregrate state considerations
+			ctlPlaneState = ospdirectorv1beta1.ControlPlaneError
+			reasonMsg = fmt.Sprintf("Underlying OSVMSet %s hit an error: %s", vmSet.Name, vmSet.Status.ProvisioningStatus.Reason)
+		} else {
+			vmSetStateCounts[vmSet.Status.ProvisioningStatus.State]++
+		}
+	}
+
+	if ctlPlaneState == "" {
+		// No overrides were set, so calculate an appropriate aggregate status.
+		// TODO?: Currently considering states in an arbitrary order of priority here...
+		if vmSetStateCounts[ospdirectorv1beta1.VMSetProvisioning] > 0 {
+			ctlPlaneState = ospdirectorv1beta1.ControlPlaneProvisioning
+			reasonMsg = "One or more OSVMSets are provisioning"
+		} else if vmSetStateCounts[ospdirectorv1beta1.VMSetDeprovisioning] > 0 {
+			ctlPlaneState = ospdirectorv1beta1.ControlPlaneDeprovisioning
+			reasonMsg = "One or more OSVMSets are deprovisioning"
+		} else if vmSetStateCounts[ospdirectorv1beta1.VMSetWaiting] > 0 || vmSetStateCounts[""] > 0 {
+			ctlPlaneState = ospdirectorv1beta1.ControlPlaneWaiting
+			reasonMsg = "Waiting on one or more OSVMSets to initialize or continue"
+		} else {
+			// If we get here, the only states possible for the VMSets are provisioned or empty,
+			// which both count as provisioned
+			ctlPlaneState = ospdirectorv1beta1.ControlPlaneProvisioned
+			reasonMsg = "All requested OSVMSets have been provisioned"
 		}
 	}
 
 	newProvStatus.ClientReady = (clientPod != nil && clientPod.Status.Phase == corev1.PodRunning)
-	newProvStatus.VmsDesiredCount = desiredVms
-	newProvStatus.VmsReadyCount = readyVms
-	newProvStatus.State = ospdirectorv1beta1.ControlPlaneProvisioning
-	newProvStatus.Reason = "Underlying OSVMSet(s) are provisioning"
-
-	if provisionedVMSets >= len(instance.Spec.VirtualMachineRoles) {
-		newProvStatus.State = ospdirectorv1beta1.ControlPlaneProvisioned
-		newProvStatus.Reason = "Underlying OSVMSet(s) have been provisioned"
-	}
+	newProvStatus.DesiredCount = len(instance.Spec.VirtualMachineRoles)
+	newProvStatus.ReadyCount = vmSetStateCounts[ospdirectorv1beta1.VMSetProvisioned] + vmSetStateCounts[ospdirectorv1beta1.VMSetEmpty]
+	newProvStatus.State = ctlPlaneState
+	newProvStatus.Reason = reasonMsg
 
 	return ctrl.Result{}, r.setProvisioningStatus(instance, newProvStatus)
 }
