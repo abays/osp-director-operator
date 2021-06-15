@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/diff"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -98,6 +100,9 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
+	// Used in comparisons below to determine whether a status update is actually needed
+	newProvStatus := ospdirectorv1beta1.OpenStackControlPlaneProvisioningStatus{}
+
 	envVars := make(map[string]common.EnvSetter)
 
 	// Secret - used for deployment to ssh into the overcloud nodes,
@@ -111,16 +116,25 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		r.Log.Info(fmt.Sprintf("Creating deployment ssh secret: %s", deploymentSecretName))
 		deploymentSecret, err = common.SSHKeySecret(deploymentSecretName, instance.Namespace, map[string]string{deploymentSecretName: ""})
 		if err != nil {
+			newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+			newProvStatus.Reason = err.Error()
+			_ = r.setProvisioningStatus(instance, newProvStatus)
 			return ctrl.Result{}, err
 		}
 		secretHash, op, err = common.CreateOrUpdateSecret(r, instance, deploymentSecret)
 		if err != nil {
+			newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+			newProvStatus.Reason = err.Error()
+			_ = r.setProvisioningStatus(instance, newProvStatus)
 			return ctrl.Result{}, err
 		}
 		if op != controllerutil.OperationResultNone {
 			r.Log.Info(fmt.Sprintf("Secret %s successfully reconciled - operation: %s", deploymentSecret.Name, string(op)))
 		}
 	} else if err != nil {
+		newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+		newProvStatus.Reason = err.Error()
+		_ = r.setProvisioningStatus(instance, newProvStatus)
 		return ctrl.Result{}, fmt.Errorf("error get secret %s: %v", deploymentSecretName, err)
 	}
 	envVars[deploymentSecret.Name] = common.EnvValue(secretHash)
@@ -130,8 +144,15 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		_, _, err = common.GetSecret(r, instance.Spec.PasswordSecret, instance.Namespace)
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
-				return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("PasswordSecret %s not found but specified in CR, next reconcile in 30s", instance.Spec.PasswordSecret)
+				err2 := fmt.Errorf("PasswordSecret %s not found but specified in CR, next reconcile in 30s", instance.Spec.PasswordSecret)
+				newProvStatus.State = ospdirectorv1beta1.ControlPlaneWaiting
+				newProvStatus.Reason = err2.Error()
+				_ = r.setProvisioningStatus(instance, newProvStatus)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, err2
 			}
+			newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+			newProvStatus.Reason = err.Error()
+			_ = r.setProvisioningStatus(instance, newProvStatus)
 			// Error reading the object - requeue the request.
 			return ctrl.Result{}, err
 		}
@@ -151,6 +172,9 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	err = common.CreateOrGetHostname(instance, &hostnameDetails)
 	if err != nil {
+		newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+		newProvStatus.Reason = err.Error()
+		_ = r.setProvisioningStatus(instance, newProvStatus)
 		return ctrl.Result{}, err
 	}
 
@@ -181,6 +205,9 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		}
 		ipset, op, err := common.OvercloudipsetCreateOrUpdate(r, instance, ipsetDetails)
 		if err != nil {
+			newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+			newProvStatus.Reason = err.Error()
+			_ = r.setProvisioningStatus(instance, newProvStatus)
 			return ctrl.Result{}, err
 		}
 
@@ -189,7 +216,9 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		}
 
 		if len(ipset.Status.HostIPs) < controlplane.Count {
-			r.Log.Info(fmt.Sprintf("IPSet has not yet reached the required replicas %d", controlplane.Count))
+			newProvStatus.State = ospdirectorv1beta1.ControlPlaneWaiting
+			newProvStatus.Reason = fmt.Sprintf("IPSet has not yet reached the required replicas %d", controlplane.Count)
+			_ = r.setProvisioningStatus(instance, newProvStatus)
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		}
 
@@ -242,6 +271,9 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		})
 
 		if err != nil {
+			newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+			newProvStatus.Reason = err.Error()
+			_ = r.setProvisioningStatus(instance, newProvStatus)
 			return ctrl.Result{}, err
 		}
 		if op != controllerutil.OperationResultNone {
@@ -254,6 +286,9 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		"openstackvmsets.osp-director.openstack.org/ospcontroller": "True",
 	}, instance.Namespace)
 	if err != nil {
+		newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+		newProvStatus.Reason = err.Error()
+		_ = r.setProvisioningStatus(instance, newProvStatus)
 		return ctrl.Result{}, err
 	}
 
@@ -288,11 +323,35 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		return nil
 	})
 	if err != nil {
+		newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+		newProvStatus.Reason = err.Error()
+		_ = r.setProvisioningStatus(instance, newProvStatus)
 		return ctrl.Result{}, err
 	}
 	if op != controllerutil.OperationResultNone {
 		r.Log.Info(fmt.Sprintf("OpenStackClient CR successfully reconciled - operation: %s", string(op)))
 	}
+
+	// Calculate overall status
+
+	clientPod, err := r.Kclient.CoreV1().Pods(instance.Namespace).Get(context.TODO(), "openstackclient", metav1.GetOptions{})
+
+	if err != nil && !k8s_errors.IsNotFound(err) {
+		newProvStatus.State = ospdirectorv1beta1.ControlPlaneError
+		newProvStatus.Reason = err.Error()
+		_ = r.setProvisioningStatus(instance, newProvStatus)
+		return ctrl.Result{}, err
+	}
+
+	newProvStatus.ClientReady = (clientPod != nil && clientPod.Status.Phase == corev1.PodRunning)
+
+	desiredVms := 0
+	readyVms := 0
+
+	for _, role := range instance.Spec.VirtualMachineRoles {
+		desiredVms += role.RoleCount
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -371,4 +430,26 @@ func (r *OpenStackControlPlaneReconciler) setNetStatus(instance *ospdirectorv1be
 		instance.Status.VIPStatus[hostnameDetails.Hostname] = status
 	}
 
+}
+
+func (r *OpenStackControlPlaneReconciler) setProvisioningStatus(instance *ospdirectorv1beta1.OpenStackControlPlane, newProvStatus ospdirectorv1beta1.OpenStackControlPlaneProvisioningStatus) error {
+
+	// if the current ProvisioningStatus is different from the actual, store the update
+	// otherwise, just log the status again
+	if !reflect.DeepEqual(instance.Status.ProvisioningStatus, newProvStatus) {
+		r.Log.Info(fmt.Sprintf("%s - diff %s", instance.Status.ProvisioningStatus.Reason, diff.ObjectReflectDiff(instance.Status.ProvisioningStatus, newProvStatus)))
+		instance.Status.ProvisioningStatus = newProvStatus
+
+		instance.Status.Conditions = ospdirectorv1beta1.ConditionList{}
+		instance.Status.Conditions.Set(ospdirectorv1beta1.ConditionType(newProvStatus.State), corev1.ConditionTrue, ospdirectorv1beta1.ConditionReason(newProvStatus.Reason), newProvStatus.Reason)
+
+		if err := r.Client.Status().Update(context.TODO(), instance); err != nil {
+			r.Log.Error(err, "Failed to update CR status %v")
+			return err
+		}
+	} else if newProvStatus.Reason != "" {
+		r.Log.Info(newProvStatus.Reason)
+	}
+
+	return nil
 }
