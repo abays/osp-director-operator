@@ -21,7 +21,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - description: Desired
-      jsonPath: .spec.virtualMachineRoles[*].roleCount.blahblah()
+      jsonPath: .status.provisioningStatus.vmsDesiredCount
       name: Desired
       type: integer
     - description: Ready
@@ -199,6 +199,8 @@ spec:
                     description: ControlPlaneProvisioningState - the overall state
                       of this OpenStackControlPlane
                     type: string
+                  vmsDesiredCount:
+                    type: integer
                   vmsReadyCount:
                     type: integer
                 type: object

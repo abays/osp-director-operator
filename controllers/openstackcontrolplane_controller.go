@@ -192,6 +192,7 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	hostnameRefs := instance.GetHostnames()
+	vmSets := []*ospdirectorv1beta1.OpenStackVMSet{}
 
 	for _, vmRole := range instance.Spec.VirtualMachineRoles {
 		// create VIP for all networks for any of the VM roles
@@ -279,6 +280,7 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		if op != controllerutil.OperationResultNone {
 			r.Log.Info(fmt.Sprintf("VMSet CR %s successfully reconciled - operation: %s", instance.Name, string(op)))
 		}
+		vmSets = append(vmSets, vmSet)
 	}
 
 	// TODO:
@@ -331,16 +333,33 @@ func (r *OpenStackControlPlaneReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	newProvStatus.ClientReady = (clientPod != nil && clientPod.Status.Phase == corev1.PodRunning)
-
 	desiredVms := 0
 	readyVms := 0
+	provisionedVMSets := 0
 
 	for _, role := range instance.Spec.VirtualMachineRoles {
 		desiredVms += role.RoleCount
 	}
 
-	return ctrl.Result{}, nil
+	for _, vmSet := range vmSets {
+		readyVms += vmSet.Status.ProvisioningStatus.ReadyCount
+		if vmSet.Status.ProvisioningStatus.State == ospdirectorv1beta1.VMSetProvisioned || vmSet.Status.ProvisioningStatus.State == ospdirectorv1beta1.VMSetEmpty {
+			provisionedVMSets++
+		}
+	}
+
+	newProvStatus.ClientReady = (clientPod != nil && clientPod.Status.Phase == corev1.PodRunning)
+	newProvStatus.VmsDesiredCount = desiredVms
+	newProvStatus.VmsReadyCount = readyVms
+	newProvStatus.State = ospdirectorv1beta1.ControlPlaneProvisioning
+	newProvStatus.Reason = "Underlying OSVMSet(s) are provisioning"
+
+	if provisionedVMSets >= len(instance.Spec.VirtualMachineRoles) {
+		newProvStatus.State = ospdirectorv1beta1.ControlPlaneProvisioned
+		newProvStatus.Reason = "Underlying OSVMSet(s) have been provisioned"
+	}
+
+	return ctrl.Result{}, r.setProvisioningStatus(instance, newProvStatus)
 }
 
 // SetupWithManager -
