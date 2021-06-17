@@ -81,11 +81,11 @@ type OpenStackControlPlaneStatus struct {
 // OpenStackControlPlaneProvisioningStatus represents the overall provisioning state of
 // the OpenStackControlPlane (with an optional explanatory message)
 type OpenStackControlPlaneProvisioningStatus struct {
-	State           ControlPlaneProvisioningState `json:"state,omitempty"`
-	Reason          string                        `json:"reason,omitempty"`
-	VmsDesiredCount int                           `json:"vmsDesiredCount,omitempty"`
-	VmsReadyCount   int                           `json:"vmsReadyCount,omitempty"`
-	ClientReady     bool                          `json:"clientReady,omitempty"`
+	State        ControlPlaneProvisioningState `json:"state,omitempty"`
+	Reason       string                        `json:"reason,omitempty"`
+	DesiredCount int                           `json:"desiredCount,omitempty"`
+	ReadyCount   int                           `json:"readyCount,omitempty"`
+	ClientReady  bool                          `json:"clientReady,omitempty"`
 }
 
 // ControlPlaneProvisioningState - the overall state of this OpenStackControlPlane
@@ -110,8 +110,9 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=osctlplane;osctlplanes
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenStack ControlPlane"
-// +kubebuilder:printcolumn:name="Desired",type="integer",JSONPath=".status.provisioningStatus.vmsDesiredCount",description="Desired"
-// +kubebuilder:printcolumn:name="Ready",type="integer",JSONPath=".status.provisioningStatus.vmsReadyCount",description="Ready"
+// +kubebuilder:printcolumn:name="VMSets Desired",type="integer",JSONPath=".status.provisioningStatus.desiredCount",description="VMSets Desired"
+// +kubebuilder:printcolumn:name="VMSets Ready",type="integer",JSONPath=".status.provisioningStatus.readyCount",description="VMSets Ready"
+// +kubebuilder:printcolumn:name="Client Ready",type="boolean",JSONPath=".status.provisioningStatus.clientReady",description="Client Ready"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.provisioningStatus.state",description="Status"
 // +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.provisioningStatus.reason",description="Reason"
 

@@ -20,14 +20,18 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Desired
-      jsonPath: .spec.virtualMachineRoles[*].roleCount.blahblah()
-      name: Desired
+    - description: VMSets Desired
+      jsonPath: .status.provisioningStatus.desiredCount
+      name: VMSets Desired
       type: integer
-    - description: Ready
-      jsonPath: .status.provisioningStatus.vmsReadyCount
-      name: Ready
+    - description: VMSets Ready
+      jsonPath: .status.provisioningStatus.readyCount
+      name: VMSets Ready
       type: integer
+    - description: Client Ready
+      jsonPath: .status.provisioningStatus.clientReady
+      name: Client Ready
+      type: boolean
     - description: Status
       jsonPath: .status.provisioningStatus.state
       name: Status
@@ -193,14 +197,16 @@ spec:
                 properties:
                   clientReady:
                     type: boolean
+                  desiredCount:
+                    type: integer
+                  readyCount:
+                    type: integer
                   reason:
                     type: string
                   state:
                     description: ControlPlaneProvisioningState - the overall state
                       of this OpenStackControlPlane
                     type: string
-                  vmsReadyCount:
-                    type: integer
                 type: object
               vipStatus:
                 additionalProperties:
