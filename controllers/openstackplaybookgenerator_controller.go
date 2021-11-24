@@ -129,6 +129,18 @@ func (r *OpenStackPlaybookGeneratorReconciler) Reconcile(ctx context.Context, re
 		return ctrl.Result{}, err
 	}
 
+	// Since the heat env CM was supplied to the CR, label it appropriately if it does not already
+	// have our standard labelling
+	if val := tripleoCustomDeployCM.Labels[common.OwnerControllerNameLabelSelector]; val == "" {
+		tripleoCustomDeployCM.Labels = common.MergeStringMaps(tripleoCustomDeployCM.Labels, cmLabels)
+		if err := r.Client.Update(context.TODO(), tripleoCustomDeployCM, &client.UpdateOptions{}); err != nil {
+			if !k8s_errors.IsConflict(err) {
+				_ = r.setCurrentState(instance, ospdirectorv1beta1.PlaybookGeneratorError, err.Error())
+			}
+			return ctrl.Result{}, err
+		}
+	}
+
 	tripleoCustomDeployFiles := tripleoCustomDeployCM.Data
 	templateParameters["TripleoCustomDeployFiles"] = tripleoCustomDeployFiles
 
@@ -174,6 +186,18 @@ func (r *OpenStackPlaybookGeneratorReconciler) Reconcile(ctx context.Context, re
 		}
 		tripleoTarballFiles := tripleoTarballCM.BinaryData
 		templateParameters["TripleoTarballFiles"] = tripleoTarballFiles
+
+		// Since this CM was supplied to the CR, label it appropriately if it does not already
+		// have our standard labelling
+		if val := tripleoTarballCM.Labels[common.OwnerControllerNameLabelSelector]; val == "" {
+			tripleoTarballCM.Labels = common.MergeStringMaps(tripleoTarballCM.Labels, cmLabels)
+			if err := r.Client.Update(context.TODO(), tripleoTarballCM, &client.UpdateOptions{}); err != nil {
+				if !k8s_errors.IsConflict(err) {
+					_ = r.setCurrentState(instance, ospdirectorv1beta1.PlaybookGeneratorError, err.Error())
+				}
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	cms := []common.Template{

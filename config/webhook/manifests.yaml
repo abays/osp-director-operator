@@ -142,6 +142,46 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-osp-director-openstack-org-v1beta1-openstackbackup
+  failurePolicy: Fail
+  name: vopenstackbackup.kb.io
+  rules:
+  - apiGroups:
+    - osp-director.openstack.org
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - openstackbackups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-osp-director-openstack-org-v1beta1-openstackbackuprequest
+  failurePolicy: Fail
+  name: vopenstackbackuprequest.kb.io
+  rules:
+  - apiGroups:
+    - osp-director.openstack.org
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - openstackbackuprequests
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
   - v1beta1
   clientConfig:
     service:
@@ -158,6 +198,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - openstackbaremetalsets
   sideEffects: None
@@ -179,6 +220,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - openstackcontrolplanes
   sideEffects: None
@@ -200,6 +242,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - openstacknets
   sideEffects: None
@@ -231,6 +274,27 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-osp-director-openstack-org-v1beta1-openstacknetconfig
+  failurePolicy: Fail
+  name: vopenstacknetconfig.kb.io
+  rules:
+  - apiGroups:
+    - osp-director.openstack.org
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - openstacknetconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-osp-director-openstack-org-v1beta1-openstackprovisionserver
   failurePolicy: Fail
   name: vopenstackprovisionserver.kb.io
@@ -242,6 +306,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - openstackprovisionservers
   sideEffects: None
@@ -263,6 +328,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - openstackvmsets
   sideEffects: None

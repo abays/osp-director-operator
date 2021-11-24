@@ -33,3 +33,18 @@ func MergeMaps(baseMap map[string]interface{}, extraMaps ...map[string]interface
 
 	return baseMap
 }
+
+// MergeStringMaps - merge two or more string->map maps
+func MergeStringMaps(baseMap map[string]string, extraMaps ...map[string]string) map[string]string {
+	if baseMap == nil {
+		baseMap = map[string]string{}
+	}
+
+	for _, extraMap := range extraMaps {
+		for key, value := range extraMap {
+			baseMap[key] = value
+		}
+	}
+
+	return baseMap
+}
