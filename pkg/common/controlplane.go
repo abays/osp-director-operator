@@ -24,6 +24,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
+	"github.com/openstack-k8s-operators/osp-director-operator/pkg/openstackclient"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -56,4 +58,71 @@ func GetControlPlane(r ReconcilerCommon, obj metav1.Object) (ospdirectorv1beta1.
 
 	return controlPlane, ctrl.Result{}, nil
 
+}
+
+// GetClient -
+func GetClient(r ReconcilerCommon, obj metav1.Object) (*ospdirectorv1beta1.OpenStackClient, reconcile.Result, error) {
+	// FIXME: Same assumption as GetControlPlane -- assumes there is only one OpenStackControlPlane, as this
+	// function uses GetControlPlane
+	var osClient *ospdirectorv1beta1.OpenStackClient
+	controlPlane, _, err := GetControlPlane(r, obj)
+
+	if err != nil {
+		return osClient, ctrl.Result{}, err
+	}
+
+	// Get the OpenStackClient associated with the OpenStackControlPlane
+	openstackClientList := &ospdirectorv1beta1.OpenStackClientList{}
+
+	if err := r.GetClient().List(context.TODO(), openstackClientList); err != nil {
+		return osClient, ctrl.Result{}, err
+	}
+
+	for _, openstackClient := range openstackClientList.Items {
+		for _, ownerRef := range openstackClient.OwnerReferences {
+			if ownerRef.Kind == controlPlane.Kind && ownerRef.Name == controlPlane.Name {
+				// This is the OpenStackClient associated with the OpenStackControlPlane
+				osClient = &openstackClient
+				break
+			}
+		}
+		if osClient != nil {
+			break
+		}
+	}
+
+	if osClient == nil {
+		return nil, ctrl.Result{}, fmt.Errorf("no OpenStackClient was found for OpenStackControlPlane %s", controlPlane.Name)
+	}
+
+	return osClient, ctrl.Result{}, nil
+}
+
+// GetClientPod -
+func GetClientPod(r ReconcilerCommon, obj metav1.Object) (*corev1.Pod, reconcile.Result, error) {
+	podList := &corev1.PodList{}
+
+	osClient, _, err := GetClient(r, obj)
+
+	if err != nil {
+		return nil, ctrl.Result{}, err
+	}
+
+	labelSelector := map[string]string{
+		OwnerNameSpaceLabelSelector:      osClient.Namespace,
+		OwnerNameLabelSelector:           osClient.Name,
+		OwnerControllerNameLabelSelector: openstackclient.AppLabel,
+	}
+
+	listOpts := []client.ListOption{
+		client.InNamespace(osClient.Namespace),
+		client.MatchingLabels(labelSelector),
+	}
+
+	if err := r.GetClient().List(context.TODO(), podList, listOpts...); err != nil || len(podList.Items) < 1 {
+		return nil, ctrl.Result{}, fmt.Errorf("no pod was found for OpenStackClient %s", osClient.Name)
+	}
+
+	// FIXME?: "There can be only one." - Connor MacLeod
+	return &podList.Items[0], ctrl.Result{}, nil
 }

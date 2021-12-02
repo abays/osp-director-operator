@@ -29,6 +29,12 @@ type OpenStackBackupRequestSpec struct {
 	// +kubebuilder:default=save
 	Mode BackupMode `json:"mode"`
 
+	// If "Mode" is "save", whether to save snapshots of all VMSet VMs
+	// If "Mode" is "restore" or "cleanRestore", whether to take the VMSnapshots from "ResourceSource"
+	// OpenStackBackup (if there are any) and restore them as their respective VMSet VMs
+	// +kubebuilder:default=false
+	IncludeVMImages bool `json:"includeVmImages" optional:"true"`
+
 	// If "Mode" is "save", optional list of additional config maps to save in the backup
 	// If "Mode" is "cleanRestore", optional list of additional config maps to remove before restoring the backup
 	AdditionalConfigMaps []string `json:"additionalConfigMaps,omitempty" optional:"true"`
@@ -43,6 +49,10 @@ type OpenStackBackupRequestSpec struct {
 
 // OpenStackBackupRequestStatus defines the observed state of OpenStackBackupRequest
 type OpenStackBackupRequestStatus struct {
+	// VMSnapshotNames - a mapping of VM name to VM snapshot name that indicates which VM images have been saved
+	// or restored (depends upon spec "Mode")
+	VMSnapshotNames map[string]string `json:"vmSnapshotNames,omitempty" optional:"true"`
+
 	// CompletionTimestamp - If the request succeeded, the timestamp for that completion
 	CompletionTimestamp metav1.Time `json:"completionTimestamp,omitempty" optional:"true"`
 

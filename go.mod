@@ -24,12 +24,13 @@ require (
 	github.com/tidwall/gjson v1.9.3
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/tools v0.1.7 // indirect
+	golang.org/x/tools v0.1.8 // indirect
 	k8s.io/api v0.21.4
 	k8s.io/apimachinery v0.21.4
 	k8s.io/apiserver v0.21.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
+	kubevirt.io/api v0.0.0-20211123183657-4668defa1b87
 	kubevirt.io/client-go v0.34.2
 	kubevirt.io/containerized-data-importer v1.23.5
 	sigs.k8s.io/controller-runtime v0.9.7

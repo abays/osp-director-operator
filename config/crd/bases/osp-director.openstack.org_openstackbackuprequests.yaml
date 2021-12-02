@@ -71,6 +71,13 @@ spec:
                 items:
                   type: string
                 type: array
+              includeVmImages:
+                default: false
+                description: If "Mode" is "save", whether to save snapshots of all
+                  VMSet VMs If "Mode" is "restore" or "cleanRestore", whether to take
+                  the VMSnapshots from "ResourceSource" OpenStackBackup (if there
+                  are any) and restore them as their respective VMSet VMs
+                type: boolean
               mode:
                 default: save
                 description: Mode - what this backup should be doing (if it hasn't
@@ -81,6 +88,7 @@ spec:
                   or "cleanRestore", in which case this field is required
                 type: string
             required:
+            - includeVmImages
             - mode
             type: object
           status:
@@ -127,6 +135,13 @@ spec:
               currentState:
                 description: CurrentState - the overall state of this backup request
                 type: string
+              vmSnapshotNames:
+                additionalProperties:
+                  type: string
+                description: VMSnapshotNames - a mapping of VM name to VM snapshot
+                  name that indicates which VM images have been saved or restored
+                  (depends upon spec "Mode")
+                type: object
             required:
             - currentState
             type: object

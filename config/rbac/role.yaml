@@ -663,6 +663,19 @@ rules:
   - patch
   - update
 - apiGroups:
+  - snapshot.kubevirt.io
+  resources:
+  - virtualmachinerestores
+  - virtualmachinesnapshots
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - sriovnetwork.openshift.io
   resources:
   - sriovnetworknodepolicies
@@ -733,6 +746,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
 - apiGroups:
   - ""
   resources:

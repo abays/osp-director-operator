@@ -16,10 +16,22 @@ limitations under the License.
 
 package common
 
+import "strings"
+
 // StringInSlice - is string in slice
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+// StringContainsSliceElement - does a string have a least one slice element as a substring
+func StringContainsSliceElement(a string, list []string) bool {
+	for _, b := range list {
+		if strings.Contains(a, b) {
 			return true
 		}
 	}

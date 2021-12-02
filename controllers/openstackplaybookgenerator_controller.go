@@ -104,6 +104,18 @@ func (r *OpenStackPlaybookGeneratorReconciler) Reconcile(ctx context.Context, re
 		return ctrl.Result{}, err
 	}
 
+	// If we determine that a backup is overriding this reconcile, requeue after a longer delay
+	overrideReconcile, err := ospdirectorv1beta1.OpenStackBackupOverridesReconcile(r.Client, instance.Namespace, true)
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if overrideReconcile {
+		r.Log.Info(fmt.Sprintf("OpenStackPlaybookGenerator %s reconcile overridden due to OpenStackBackupRequest(s) state; requeuing after 20 seconds", instance.Name))
+		return ctrl.Result{RequeueAfter: time.Duration(20) * time.Second}, err
+	}
+
 	// Initialize conditions list if not already set
 	if instance.Status.Conditions == nil {
 		instance.Status.Conditions = ospdirectorv1beta1.ConditionList{}

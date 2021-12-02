@@ -17,14 +17,19 @@ limitations under the License.
 package common
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // GetAllPodsWithLabel - get all pods from namespace with a specific label
@@ -58,4 +63,50 @@ func DeletePodsWithLabel(r ReconcilerCommon, obj metav1.Object, labelSelectorMap
 	}
 
 	return nil
+}
+
+// ExecPodCommand - Execute shell command within a pod
+func ExecPodCommand(r ReconcilerCommon, pod corev1.Pod, containerName string, command string) (bytes.Buffer, bytes.Buffer, error) {
+	req := r.GetKClient().CoreV1().RESTClient().Post().
+		Namespace(pod.Namespace).
+		Resource("pods").
+		Name(pod.Name).
+		SubResource("exec").
+		Param("container", containerName).
+		Param("stdin", "true").
+		Param("stdout", "true").
+		Param("stderr", "true").
+		Param("tty", "false").
+		Param("command", "sh")
+
+	cfg, err := config.GetConfig()
+
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
+	}
+
+	r.GetLogger().Info(fmt.Sprintf("AJB URL: %s", req.URL().String()))
+
+	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
+	}
+
+	var buf bytes.Buffer
+	var buf2 bytes.Buffer
+	// var args []string
+
+	// argString := strings.Join(command, "\n")
+	argString := fmt.Sprintf("%s\n", command)
+	r.GetLogger().Info(fmt.Sprintf("AJB STR: %s", argString))
+	reader := strings.NewReader(argString)
+
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  io.Reader(reader),
+		Stdout: &buf,
+		Stderr: &buf2,
+		Tty:    false,
+	})
+
+	return buf, buf2, err
 }

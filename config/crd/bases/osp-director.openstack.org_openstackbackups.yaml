@@ -2990,6 +2990,11 @@ spec:
                 required:
                 - items
                 type: object
+              vmSnapshotNames:
+                additionalProperties:
+                  type: string
+                description: VM image snapshot names
+                type: object
             type: object
           status:
             description: OpenStackBackupStatus defines the observed state of OpenStackBackup

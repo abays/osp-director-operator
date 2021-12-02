@@ -38,6 +38,10 @@ type OpenStackBackupSpec struct {
 	// +kubebuilder:validation:Optional
 	// List of Secrets saved in the backup
 	Secrets corev1.SecretList `json:"secrets,omitempty" optional:"true"`
+
+	// VM image snapshot names
+	// +kubebuilder:validation:Optional
+	VMSnapshotNames map[string]string `json:"vmSnapshotNames,omitempty" optional:"true"`
 }
 
 // CrsForBackup -

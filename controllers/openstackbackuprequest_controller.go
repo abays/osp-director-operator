@@ -30,9 +30,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	snapshotv1 "kubevirt.io/api/snapshot/v1alpha1"
+	virtv1 "kubevirt.io/client-go/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/osp-director-operator/pkg/openstackbackup"
@@ -93,6 +98,9 @@ func (r *OpenStackBackupRequestReconciler) GetScheme() *runtime.Scheme {
 //+kubebuilder:rbac:groups=osp-director.openstack.org,resources=openstackvmsets/status,verbs=get
 //+kubebuilder:rbac:groups=osp-director.openstack.org,resources=openstackplaybookgenerators,verbs=delete;deletecollection
 //+kubebuilder:rbac:groups=core,namespace=openstack,resources=secrets;configmaps,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=core,namespace=openstack,resources=pods/exec,verbs=create
+//+kubebuilder:rbac:groups=kubevirt.io,resources=virtualmachines,verbs=get;list;watch
+//+kubebuilder:rbac:groups=snapshot.kubevirt.io,resources=virtualmachinesnapshots;virtualmachinerestores,verbs=create;delete;get;list;patch;update;watch
 
 // Reconcile -
 func (r *OpenStackBackupRequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -110,13 +118,18 @@ func (r *OpenStackBackupRequestReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 
+	// Initialize VmSnapshotNames status map if not already present
+	if instance.Status.VMSnapshotNames == nil {
+		instance.Status.VMSnapshotNames = map[string]string{}
+	}
+
 	// get a copy of the current CR status
 	oldStatus := instance.Status.DeepCopy()
 
 	if instance.Spec.Mode == ospdirectorv1beta1.BackupSave &&
 		(instance.Status.CurrentState != ospdirectorv1beta1.BackupSaveError &&
 			instance.Status.CurrentState != ospdirectorv1beta1.BackupSaved) {
-		if err := r.saveBackup(instance, oldStatus); err != nil {
+		if err := r.saveBackup(instance, oldStatus); err != nil && !k8s_errors.IsConflict(err) {
 			instance.Status.CurrentState = ospdirectorv1beta1.BackupSaveError
 			_ = r.setStatus(instance, oldStatus, err.Error())
 			return ctrl.Result{}, err
@@ -126,7 +139,7 @@ func (r *OpenStackBackupRequestReconciler) Reconcile(ctx context.Context, req ct
 		instance.Spec.Mode == ospdirectorv1beta1.BackupCleanRestore) &&
 		(instance.Status.CurrentState != ospdirectorv1beta1.BackupRestoreError &&
 			instance.Status.CurrentState != ospdirectorv1beta1.BackupRestored) {
-		if err := r.restoreBackup(instance, oldStatus); err != nil {
+		if err := r.restoreBackup(instance, oldStatus); err != nil && !k8s_errors.IsConflict(err) {
 			instance.Status.CurrentState = ospdirectorv1beta1.BackupRestoreError
 			_ = r.setStatus(instance, oldStatus, err.Error())
 			return ctrl.Result{}, err
@@ -139,6 +152,44 @@ func (r *OpenStackBackupRequestReconciler) Reconcile(ctx context.Context, req ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OpenStackBackupRequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	vmSnapshotsFn := handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		result := []reconcile.Request{}
+		label := o.GetLabels()
+		// verify object has ownerUIDLabelSelector
+		if _, ok := label[openstackbackup.BackupSnapshotNameLabelSelector]; ok {
+			r.Log.Info(fmt.Sprintf("VirtualMachineSnapshot object %s marked with backup snapshot label selector", o.GetName()))
+			// return namespace and Name of CR
+			name := client.ObjectKey{
+				Namespace: o.GetNamespace(),
+				Name:      o.GetName(),
+			}
+			result = append(result, reconcile.Request{NamespacedName: name})
+		}
+		if len(result) > 0 {
+			return result
+		}
+		return nil
+	})
+
+	vmRestoresFn := handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		result := []reconcile.Request{}
+		label := o.GetLabels()
+		// verify object has ownerUIDLabelSelector
+		if _, ok := label[openstackbackup.BackupSnapshotNameLabelSelector]; ok {
+			r.Log.Info(fmt.Sprintf("VirtualMachineRestore object %s marked with backup snapshot label selector", o.GetName()))
+			// return namespace and Name of CR
+			name := client.ObjectKey{
+				Namespace: o.GetNamespace(),
+				Name:      o.GetName(),
+			}
+			result = append(result, reconcile.Request{NamespacedName: name})
+		}
+		if len(result) > 0 {
+			return result
+		}
+		return nil
+	})
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ospdirectorv1beta1.OpenStackBackupRequest{}).
 		Owns(&ospdirectorv1beta1.OpenStackBackup{}).
@@ -152,6 +203,9 @@ func (r *OpenStackBackupRequestReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&ospdirectorv1beta1.OpenStackNetConfig{}).
 		Owns(&ospdirectorv1beta1.OpenStackProvisionServer{}).
 		Owns(&ospdirectorv1beta1.OpenStackVMSet{}).
+		Owns(&virtv1.VirtualMachine{}).
+		Watches(&source.Kind{Type: &snapshotv1.VirtualMachineSnapshot{}}, vmSnapshotsFn).
+		Watches(&source.Kind{Type: &snapshotv1.VirtualMachineRestore{}}, vmRestoresFn).
 		Complete(r)
 }
 
@@ -189,7 +243,7 @@ func (r *OpenStackBackupRequestReconciler) saveBackup(instance *ospdirectorv1bet
 		// associated webhooks from allowing certain actions.
 		instance.Status.CurrentState = ospdirectorv1beta1.BackupQuiescing
 
-		if err := r.setStatus(instance, oldStatus, "OpenStackBackupRequest is waiting for other controllers to quiesce"); err != nil {
+		if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackupRequest %s is waiting for other controllers to quiesce", instance.Name)); err != nil {
 			return err
 		}
 	} else if instance.Status.CurrentState == ospdirectorv1beta1.BackupQuiescing {
@@ -213,50 +267,73 @@ func (r *OpenStackBackupRequestReconciler) saveBackup(instance *ospdirectorv1bet
 
 			r.Log.Info(fmt.Sprintf("Quiesce for save for OpenStackBackupRequest %s is waiting for: [%s]", instance.Name, holdUpsSb.String()))
 		} else {
-			// We're ready to save the actual backup, so place all CRs, CMs, Secrets, etc into the spec
-			// of an OpenStackBackup instance
+			// Set status to indicate that we are ready to start saving config
+			instance.Status.CurrentState = ospdirectorv1beta1.BackupSaving
 
-			// Get config maps and secrets we want to save
-			cmList, err := openstackbackup.GetConfigMapList(r, instance, &crLists)
-
-			if err != nil {
+			if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackupRequest %s is saving", instance.Name)); err != nil {
 				return err
 			}
-
-			secretList, err := openstackbackup.GetSecretList(r, instance, &crLists)
+		}
+	} else if instance.Status.CurrentState == ospdirectorv1beta1.BackupSaving {
+		// We're ready to save the actual backup, so first check if we need to snapshot VMSet disks
+		if instance.Spec.IncludeVMImages {
+			holdUps, err := openstackbackup.EnsureVMSnapshotSave(r, instance, oldStatus, &crLists.OpenStackVMSets)
 
 			if err != nil {
+				return fmt.Errorf("AJB ENSURE %v", err)
+			}
+
+			// If we haven't finished saving all VM snapshots, report this and requeue
+			if len(holdUps) > 0 {
+				return r.setStatus(instance, oldStatus, fmt.Sprintf("Save for OpenStackBackupRequest %s is waiting for VM snapshots for: %v", instance.Name, holdUps))
+			}
+		}
+
+		// Since requested disk snapshotting (if any) has finished, place all CRs, CMs, Secrets and
+		// snapshot names (if any) into the spec of an OpenStackBackup instance
+
+		// Get config maps and secrets we want to save (we already have the CR list)
+		cmList, err := openstackbackup.GetConfigMapList(r, instance, &crLists)
+
+		if err != nil {
+			return err
+		}
+
+		secretList, err := openstackbackup.GetSecretList(r, instance, &crLists)
+
+		if err != nil {
+			return err
+		}
+
+		backup := &ospdirectorv1beta1.OpenStackBackup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%d", instance.Name, time.Now().Unix()),
+				Namespace: instance.Namespace,
+			},
+		}
+
+		op, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, backup, func() error {
+			backup.Spec.Crs = crLists
+			backup.Spec.ConfigMaps = cmList
+			backup.Spec.Secrets = secretList
+			// Snapshot names (if any) are merely based on the VMSet VM names and are stored in the request status
+			backup.Spec.VMSnapshotNames = instance.Status.VMSnapshotNames
+
+			return nil
+		})
+		if err != nil {
+			instance.Status.CurrentState = ospdirectorv1beta1.BackupSaveError
+
+			_ = r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s save failed: %s", instance.Name, err))
+			return err
+		}
+		if op != controllerutil.OperationResultNone {
+			r.Log.Info(fmt.Sprintf("OpenStackBackup CR successfully reconciled - operation: %s", string(op)))
+
+			instance.Status.CompletionTimestamp = metav1.Now()
+			instance.Status.CurrentState = ospdirectorv1beta1.BackupSaved
+			if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s has been saved", instance.Name)); err != nil {
 				return err
-			}
-
-			backup := &ospdirectorv1beta1.OpenStackBackup{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s-%d", instance.Name, time.Now().Unix()),
-					Namespace: instance.Namespace,
-				},
-			}
-
-			op, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, backup, func() error {
-				backup.Spec.Crs = crLists
-				backup.Spec.ConfigMaps = cmList
-				backup.Spec.Secrets = secretList
-
-				return nil
-			})
-			if err != nil {
-				instance.Status.CurrentState = ospdirectorv1beta1.BackupSaveError
-
-				_ = r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s save failed: %s", instance.Name, err))
-				return err
-			}
-			if op != controllerutil.OperationResultNone {
-				r.Log.Info(fmt.Sprintf("OpenStackBackup CR successfully reconciled - operation: %s", string(op)))
-
-				instance.Status.CompletionTimestamp = metav1.Now()
-				instance.Status.CurrentState = ospdirectorv1beta1.BackupSaved
-				if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s has been saved", instance.Name)); err != nil {
-					return err
-				}
 			}
 		}
 	}
@@ -348,6 +425,7 @@ func (r *OpenStackBackupRequestReconciler) restoreBackup(instance *ospdirectorv1
 
 func (r *OpenStackBackupRequestReconciler) ensureLoadBackup(instance *ospdirectorv1beta1.OpenStackBackupRequest, oldStatus *ospdirectorv1beta1.OpenStackBackupRequestStatus, backup *ospdirectorv1beta1.OpenStackBackup) error {
 	// Create all CRs in the spec first, and set their status to some initial state
+	// Also check for VM snapshot restoration progress if that was requested
 
 	msg := fmt.Sprintf("OpenStackBackup %s initial load", backup.Name)
 
@@ -507,6 +585,20 @@ func (r *OpenStackBackupRequestReconciler) ensureLoadBackup(instance *ospdirecto
 		}
 	}
 
+	// If VM snapshot restore was requested, handle it
+	if instance.Spec.IncludeVMImages {
+		holdUps, err := openstackbackup.EnsureVMSnapshotRestore(r, instance, oldStatus, backup, instance.Spec.Mode)
+
+		if err != nil {
+			return fmt.Errorf("AJB ENSURE LOAD VM DISKS %v", err)
+		}
+
+		// If we haven't finished loading all VM snapshots, report this and requeue
+		if len(holdUps) > 0 {
+			return r.setStatus(instance, oldStatus, fmt.Sprintf("Load for OpenStackBackupRequest %s is waiting for VM snapshots for: %v", instance.Name, holdUps))
+		}
+	}
+
 	// If we get here, everything has been loaded and we can transition to the reconciliation phase
 	instance.Status.CurrentState = ospdirectorv1beta1.BackupReconciling
 	if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s is now reconciling", instance.Name)); err != nil {
@@ -555,14 +647,14 @@ func (r *OpenStackBackupRequestReconciler) ensureReconcileBackup(instance *ospdi
 			}
 		}
 
-		r.Log.Info(fmt.Sprintf("Restore of OpenStackBackup %s for OpenStackBackupRequest %s is waiting for: [%s]", backup.Name, instance.Name, holdUpsSb.String()))
-	} else {
-		// If we reach this point, all CRs from the backup have been successfully restored/configured
-		instance.Status.CompletionTimestamp = metav1.Now()
-		instance.Status.CurrentState = ospdirectorv1beta1.BackupRestored
-		if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s has been successfully restored", backup.Name)); err != nil {
-			return err
-		}
+		return r.setStatus(instance, oldStatus, fmt.Sprintf("Restore of OpenStackBackup %s for OpenStackBackupRequest %s is waiting for: [%s]", backup.Name, instance.Name, holdUpsSb.String()))
+	}
+
+	// If we reach this point, all CRs from the backup have been successfully restored/configured
+	instance.Status.CompletionTimestamp = metav1.Now()
+	instance.Status.CurrentState = ospdirectorv1beta1.BackupRestored
+	if err := r.setStatus(instance, oldStatus, fmt.Sprintf("OpenStackBackup %s has been successfully restored", backup.Name)); err != nil {
+		return err
 	}
 
 	return nil
