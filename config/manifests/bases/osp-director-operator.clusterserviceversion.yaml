@@ -32,6 +32,12 @@ spec:
       displayName: OpenStack Backup Request
       kind: OpenStackBackupRequest
       name: openstackbackuprequests.osp-director.openstack.org
+      version: v1beta2
+    - description: OpenStackBackupRequest a request to backup the OpenStack Director
+        Operator
+      displayName: OpenStack Backup Request
+      kind: OpenStackBackupRequest
+      name: openstackbackuprequests.osp-director.openstack.org
       version: v1beta1
     - description: OpenStackBackup is used to backup OpenShift resources representing
         an OSP overcloud

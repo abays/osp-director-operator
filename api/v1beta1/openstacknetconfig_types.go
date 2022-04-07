@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -172,7 +173,7 @@ type OVNBridgeMacMappingConfig struct {
 // OpenStackNetConfigStatus defines the observed state of OpenStackNetConfig
 type OpenStackNetConfigStatus struct {
 	// Conditions - conditions to display in the OpenShift GUI, which reflect CurrentState
-	Conditions         ConditionList                        `json:"conditions,omitempty" optional:"true"`
+	Conditions         ospdirectorshared.ConditionList      `json:"conditions,omitempty" optional:"true"`
 	ProvisioningStatus OpenStackNetConfigProvisioningStatus `json:"provisioningStatus,omitempty"`
 
 	Hosts map[string]OpenStackHostStatus `json:"hosts"`
@@ -210,15 +211,15 @@ const (
 	NetConfigError ProvisioningState = "Error"
 
 	// NetConfigCondReasonError - osnetcfg error
-	NetConfigCondReasonError ConditionReason = "OpenStackNetConfigError"
+	NetConfigCondReasonError ospdirectorshared.ConditionReason = "OpenStackNetConfigError"
 	// NetConfigCondReasonWaitingOnIPsForHost - waiting on IPs for all configured networks to be created
-	NetConfigCondReasonWaitingOnIPsForHost ConditionReason = "WaitingOnIPsForHost"
+	NetConfigCondReasonWaitingOnIPsForHost ospdirectorshared.ConditionReason = "WaitingOnIPsForHost"
 	// NetConfigCondReasonWaitingOnHost - waiting on host to be added to osnetcfg
-	NetConfigCondReasonWaitingOnHost ConditionReason = "WaitingOnHost"
+	NetConfigCondReasonWaitingOnHost ospdirectorshared.ConditionReason = "WaitingOnHost"
 	// NetConfigCondReasonIPReservationError - Failed to do ip reservation
-	NetConfigCondReasonIPReservationError ConditionReason = "IPReservationError"
+	NetConfigCondReasonIPReservationError ospdirectorshared.ConditionReason = "IPReservationError"
 	// NetConfigCondReasonIPReservation - ip reservation created
-	NetConfigCondReasonIPReservation ConditionReason = "IPReservationCreated"
+	NetConfigCondReasonIPReservation ospdirectorshared.ConditionReason = "IPReservationCreated"
 )
 
 // IsReady - Is this resource in its fully-configured (quiesced) state?

@@ -1,0 +1,6 @@
+apiVersion: osp-director.openstack.org/v1beta2
+kind: OpenStackBackupRequest
+metadata:
+  name: openstackbackuprequest-sample
+spec:
+  # Add fields here

@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -63,7 +64,7 @@ type OpenStackIPSetStatus struct {
 	Networks int                   `json:"networks,omitempty"`
 
 	// Conditions - conditions to display in the OpenShift GUI, which reflect CurrentState
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 }
 
 const (
@@ -72,13 +73,13 @@ const (
 	//
 
 	// IPSetCondReasonError - General error getting the OSIPset object
-	IPSetCondReasonError ConditionReason = "OpenStackIPSetError"
+	IPSetCondReasonError ospdirectorshared.ConditionReason = "OpenStackIPSetError"
 	// IPSetCondReasonProvisioned - ipset provisioned
-	IPSetCondReasonProvisioned ConditionReason = "OpenStackIPSetProvisioned"
+	IPSetCondReasonProvisioned ospdirectorshared.ConditionReason = "OpenStackIPSetProvisioned"
 	// IPSetCondReasonWaitingOnHosts - ipset Waiting on hosts to be created on IPSet
-	IPSetCondReasonWaitingOnHosts ConditionReason = "OpenStackIPSetWaitingOnHostsCreated"
+	IPSetCondReasonWaitingOnHosts ospdirectorshared.ConditionReason = "OpenStackIPSetWaitingOnHostsCreated"
 	// IPSetCondReasonCreated - created ipset
-	IPSetCondReasonCreated ConditionReason = "OpenStackIPSetCreated"
+	IPSetCondReasonCreated ospdirectorshared.ConditionReason = "OpenStackIPSetCreated"
 )
 
 //+kubebuilder:object:root=true

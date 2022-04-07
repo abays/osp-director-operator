@@ -37,7 +37,7 @@ patchesStrategicMerge:
 #- patches/webhook_in_openstacknetconfigs.yaml
 #- patches/webhook_in_openstacknetattachments.yaml
 #- patches/webhook_in_openstackbackups.yaml
-#- patches/webhook_in_openstackbackuprequests.yaml
+- patches/webhook_in_openstackbackuprequests.yaml
 #- patches/webhook_in_openstackdeploys.yaml
 #- patches/webhook_in_openstackipsets.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
@@ -57,7 +57,7 @@ patchesStrategicMerge:
 - patches/cainjection_in_openstacknetconfigs.yaml
 - patches/cainjection_in_openstacknetattachments.yaml
 - patches/cainjection_in_openstackbackups.yaml
-- patches/cainjection_in_openstackbackuprequests.yaml
+#- patches/cainjection_in_openstackbackuprequests.yaml
 - patches/cainjection_in_openstackdeploys.yaml
 - patches/cainjection_in_openstackipsets.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
@@ -65,3 +65,16 @@ patchesStrategicMerge:
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
 - kustomizeconfig.yaml
+
+# patchesJson6902:
+# - target:
+#     version: v1
+#     kind: CustomResourceDefinition
+#     name: openstackbackuprequests.osp-director.openstack.org
+#   patch: |-
+#     - op: replace
+#       path: spec/conversion/webhookClientConfig/service/name
+#       value: osp-director-operator-webhook-service
+#     - op: replace
+#       path: spec/conversion/webhookClientConfig/service/namespace
+#       value: openstack

@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,25 +63,25 @@ const (
 	//
 
 	// OsClientCondReasonError - error creating openstackclient
-	OsClientCondReasonError ConditionReason = "OpenStackClientError"
+	OsClientCondReasonError ospdirectorshared.ConditionReason = "OpenStackClientError"
 	// OsClientCondReasonProvisioned - pod created
-	OsClientCondReasonProvisioned ConditionReason = "OpenStackClientProvisioned"
+	OsClientCondReasonProvisioned ospdirectorshared.ConditionReason = "OpenStackClientProvisioned"
 	// OsClientCondReasonCreated - created openstackclient
-	OsClientCondReasonCreated ConditionReason = "OpenStackClientCreated"
+	OsClientCondReasonCreated ospdirectorshared.ConditionReason = "OpenStackClientCreated"
 	// OsClientCondReasonPVCError - error creating pvc
-	OsClientCondReasonPVCError ConditionReason = "PVCError"
+	OsClientCondReasonPVCError ospdirectorshared.ConditionReason = "PVCError"
 	// OsClientCondReasonPVCProvisioned - pvcs provisioned
-	OsClientCondReasonPVCProvisioned ConditionReason = "PVCProvisioned"
+	OsClientCondReasonPVCProvisioned ospdirectorshared.ConditionReason = "PVCProvisioned"
 	// OsClientCondReasonPodError - error creating pod
-	OsClientCondReasonPodError ConditionReason = "PodError"
+	OsClientCondReasonPodError ospdirectorshared.ConditionReason = "PodError"
 	// OsClientCondReasonPodProvisioned - pod created
-	OsClientCondReasonPodProvisioned ConditionReason = "OpenStackClientPodProvisioned"
+	OsClientCondReasonPodProvisioned ospdirectorshared.ConditionReason = "OpenStackClientPodProvisioned"
 	// OsClientCondReasonPodDeleted - pod deleted
-	OsClientCondReasonPodDeleted ConditionReason = "OpenStackClientPodDeleted"
+	OsClientCondReasonPodDeleted ospdirectorshared.ConditionReason = "OpenStackClientPodDeleted"
 	// OsClientCondReasonPodDeleteError - pod delete error
-	OsClientCondReasonPodDeleteError ConditionReason = "PodDeleteError"
+	OsClientCondReasonPodDeleteError ospdirectorshared.ConditionReason = "PodDeleteError"
 	// OsClientCondReasonPodMissing - openstackclient pod missing
-	OsClientCondReasonPodMissing ConditionReason = "OpenStackClientPodMissing"
+	OsClientCondReasonPodMissing ospdirectorshared.ConditionReason = "OpenStackClientPodMissing"
 )
 
 // OpenStackClientStatus defines the observed state of OpenStackClient
@@ -88,7 +89,7 @@ type OpenStackClientStatus struct {
 	OpenStackClientNetStatus map[string]HostStatus `json:"netStatus,omitempty"`
 
 	// Conditions - conditions to display in the OpenShift GUI, which reflect CurrentState
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 }
 
 // IsReady - Is this resource in its fully-configured (quiesced) state?

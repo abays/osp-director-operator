@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	common "github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
 	openstackclient "github.com/openstack-k8s-operators/osp-director-operator/pkg/openstackclient"
@@ -110,7 +111,7 @@ func (r *OpenStackClientReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		)
 	}
 
-	defer func(cond *ospdirectorv1beta1.Condition) {
+	defer func(cond *ospdirectorshared.Condition) {
 		//
 		// Update object conditions
 		//
@@ -177,8 +178,8 @@ func (r *OpenStackClientReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		err = r.Update(ctx, instance)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to update %s %s", instance.Kind, instance.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonAddOSNetLabelError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonAddOSNetLabelError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -198,11 +199,11 @@ func (r *OpenStackClientReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			r,
 			instance,
 			cond,
-			ospdirectorv1beta1.ConditionDetails{
-				ConditionNotFoundType:   ospdirectorv1beta1.CommonCondTypeWaiting,
-				ConditionNotFoundReason: ospdirectorv1beta1.CommonCondReasonDeploymentSecretMissing,
-				ConditionErrorType:      ospdirectorv1beta1.CommonCondTypeError,
-				ConditionErrordReason:   ospdirectorv1beta1.CommonCondReasonDeploymentSecretError,
+			ospdirectorshared.ConditionDetails{
+				ConditionNotFoundType:   ospdirectorshared.CommonCondTypeWaiting,
+				ConditionNotFoundReason: ospdirectorshared.CommonCondReasonDeploymentSecretMissing,
+				ConditionErrorType:      ospdirectorshared.CommonCondTypeError,
+				ConditionErrordReason:   ospdirectorshared.CommonCondReasonDeploymentSecretError,
 			},
 			instance.Spec.DeploymentSSHSecret,
 			20,
@@ -222,11 +223,11 @@ func (r *OpenStackClientReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			r,
 			instance,
 			cond,
-			ospdirectorv1beta1.ConditionDetails{
-				ConditionNotFoundType:   ospdirectorv1beta1.CommonCondTypeWaiting,
-				ConditionNotFoundReason: ospdirectorv1beta1.CommonCondReasonCAConfigMapMissing,
-				ConditionErrorType:      ospdirectorv1beta1.CommonCondTypeError,
-				ConditionErrordReason:   ospdirectorv1beta1.CommonCondReasonCAConfigMapError,
+			ospdirectorshared.ConditionDetails{
+				ConditionNotFoundType:   ospdirectorshared.CommonCondTypeWaiting,
+				ConditionNotFoundReason: ospdirectorshared.CommonCondReasonCAConfigMapMissing,
+				ConditionErrorType:      ospdirectorshared.CommonCondTypeError,
+				ConditionErrordReason:   ospdirectorshared.CommonCondReasonCAConfigMapError,
 			},
 			instance.Spec.CAConfigMap,
 			20,
@@ -245,11 +246,11 @@ func (r *OpenStackClientReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			r,
 			instance,
 			cond,
-			ospdirectorv1beta1.ConditionDetails{
-				ConditionNotFoundType:   ospdirectorv1beta1.CommonCondTypeWaiting,
-				ConditionNotFoundReason: ospdirectorv1beta1.CommonCondReasonIdmSecretMissing,
-				ConditionErrorType:      ospdirectorv1beta1.CommonCondTypeError,
-				ConditionErrordReason:   ospdirectorv1beta1.CommonCondReasonIdmSecretError,
+			ospdirectorshared.ConditionDetails{
+				ConditionNotFoundType:   ospdirectorshared.CommonCondTypeWaiting,
+				ConditionNotFoundReason: ospdirectorshared.CommonCondReasonIdmSecretMissing,
+				ConditionErrorType:      ospdirectorshared.CommonCondTypeError,
+				ConditionErrordReason:   ospdirectorshared.CommonCondReasonIdmSecretError,
 			},
 			instance.Spec.IdmSecret,
 			20,
@@ -382,7 +383,7 @@ func (r *OpenStackClientReconciler) getNormalizedStatus(status *ospdirectorv1bet
 func (r *OpenStackClientReconciler) podCreateOrUpdate(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackClient,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	hostname string,
 	envVars *map[string]common.EnvSetter,
 ) error {
@@ -396,7 +397,7 @@ func (r *OpenStackClientReconciler) podCreateOrUpdate(
 	//
 	osNetCfg, err := ospdirectorv1beta1.GetOsNetCfg(r.GetClient(), instance.GetNamespace(), instance.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel])
 	if err != nil {
-		cond.Type = ospdirectorv1beta1.CommonCondTypeError
+		cond.Type = ospdirectorshared.CommonCondTypeError
 		cond.Reason = ospdirectorv1beta1.NetConfigCondReasonError
 		cond.Message = fmt.Sprintf("error getting OpenStackNetConfig %s: %s",
 			instance.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel],
@@ -490,16 +491,16 @@ func (r *OpenStackClientReconciler) podCreateOrUpdate(
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
 				cond.Message = fmt.Sprintf("OpenStackNet with NameLower %s not found!", netNameLower)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetNotFound)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetNotFound)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
 				return err
 			}
 			// Error reading the object - requeue the request.
 			cond.Message = fmt.Sprintf("Error getting OSNet with labelSelector %v", labelSelector)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return err
@@ -599,8 +600,8 @@ func (r *OpenStackClientReconciler) podCreateOrUpdate(
 		err := controllerutil.SetControllerReference(instance, pod, r.Scheme)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Error set controller reference for %s", pod.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonControllerReferenceError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonControllerReferenceError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return err
@@ -622,22 +623,22 @@ func (r *OpenStackClientReconciler) podCreateOrUpdate(
 
 				// Error deleting the object
 				cond.Message = fmt.Sprintf("Error deleting OpenStackClient pod %s", pod.Name)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodDeleteError)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodDeleteError)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
 				return err
 			}
 
 			cond.Message = fmt.Sprintf("%s %s pod deleted", instance.Kind, instance.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodDeleted)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodDeleted)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 			return nil
 		}
 
 		cond.Message = fmt.Sprintf("Failed to create or update pod %s ", instance.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -645,14 +646,14 @@ func (r *OpenStackClientReconciler) podCreateOrUpdate(
 
 	if op != controllerutil.OperationResultNone {
 		cond.Message = fmt.Sprintf("%s %s %s", instance.Kind, instance.Name, op)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodProvisioned)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeProvisioned)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodProvisioned)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeProvisioned)
 		return nil
 	}
 
 	cond.Message = fmt.Sprintf("%s %s provisioned", instance.Kind, instance.Name)
-	cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodProvisioned)
-	cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeProvisioned)
+	cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPodProvisioned)
+	cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeProvisioned)
 
 	return nil
 }
@@ -663,7 +664,7 @@ func (r *OpenStackClientReconciler) podCreateOrUpdate(
 func (r *OpenStackClientReconciler) verifyNetworkAttachments(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackClient,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) (ctrl.Result, error) {
 	// verify that NetworkAttachmentDefinition for each configured network exist
 	nadMap, err := common.GetAllNetworkAttachmentDefinitions(ctx, r, instance)
@@ -684,8 +685,8 @@ func (r *OpenStackClientReconciler) verifyNetworkAttachments(
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
 				cond.Message = fmt.Sprintf("OpenStackNet with NameLower %s not found!", netNameLower)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetNotFound)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetNotFound)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -693,8 +694,8 @@ func (r *OpenStackClientReconciler) verifyNetworkAttachments(
 			}
 			// Error reading the object - requeue the request.
 			cond.Message = fmt.Sprintf("Error reading OpenStackNet with NameLower %s not found!", netNameLower)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return ctrl.Result{}, err
@@ -702,16 +703,16 @@ func (r *OpenStackClientReconciler) verifyNetworkAttachments(
 
 		if _, ok := nadMap[network.Name]; !ok {
 			cond.Message = fmt.Sprintf("NetworkAttachmentDefinition %s does not yet exist.  Reconciling again in %d seconds", network.Name, timeout)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetWaiting)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetWaiting)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 
 			return ctrl.Result{RequeueAfter: time.Duration(timeout) * time.Second}, err
 		}
 	}
 
 	cond.Message = "All NetworkAttachmentDefinitions available"
-	cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetAvailable)
-	cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeProvisioned)
+	cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetAvailable)
+	cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeProvisioned)
 
 	return ctrl.Result{}, nil
 }
@@ -722,7 +723,7 @@ func (r *OpenStackClientReconciler) verifyNetworkAttachments(
 func (r *OpenStackClientReconciler) createPVCs(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackClient,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	labels map[string]string,
 ) error {
 	// volume to presistent store /etc/hosts where entries get added by tripleo deploy
@@ -740,8 +741,8 @@ func (r *OpenStackClientReconciler) createPVCs(
 	pvc, op, err := common.CreateOrUpdatePvc(ctx, r, instance, &pvcDetails)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to create or update pvc %s ", pvc.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -768,8 +769,8 @@ func (r *OpenStackClientReconciler) createPVCs(
 	pvc, op, err = common.CreateOrUpdatePvc(ctx, r, instance, &pvcDetails)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to create or update pvc %s ", pvc.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -796,8 +797,8 @@ func (r *OpenStackClientReconciler) createPVCs(
 	pvc, op, err = common.CreateOrUpdatePvc(ctx, r, instance, &pvcDetails)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to create or update pvc %s ", pvc.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -811,8 +812,8 @@ func (r *OpenStackClientReconciler) createPVCs(
 	}
 
 	cond.Message = fmt.Sprintf("All PVCs for %s %s available", instance.Kind, instance.Name)
-	cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCProvisioned)
-	cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeProvisioned)
+	cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OsClientCondReasonPVCProvisioned)
+	cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeProvisioned)
 
 	return nil
 }

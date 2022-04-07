@@ -7,8 +7,9 @@ spec:
   conversion:
     strategy: Webhook
     webhook:
+      conversionReviewVersions: ["v1beta1", "v1beta2"]
       clientConfig:
         service:
-          namespace: system
-          name: webhook-service
+          namespace: openstack
+          name: osp-director-operator-controller-manager-service
           path: /convert

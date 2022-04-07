@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -79,7 +80,7 @@ type OpenStackVMSetSpec struct {
 type OpenStackVMSetStatus struct {
 	// BaseImageDVReady is the status of the BaseImage DataVolume
 	BaseImageDVReady   bool                             `json:"baseImageDVReady,omitempty"`
-	Conditions         ConditionList                    `json:"conditions,omitempty" optional:"true"`
+	Conditions         ospdirectorshared.ConditionList  `json:"conditions,omitempty" optional:"true"`
 	ProvisioningStatus OpenStackVMSetProvisioningStatus `json:"provisioningStatus,omitempty"`
 	// VMpods are the names of the kubevirt controller vm pods
 	VMpods  []string              `json:"vmpods,omitempty"`
@@ -117,58 +118,58 @@ const (
 	//
 
 	// VMSetCondReasonError - error creating osvmset
-	VMSetCondReasonError ConditionReason = "OpenStackVMSetError"
+	VMSetCondReasonError ospdirectorshared.ConditionReason = "OpenStackVMSetError"
 	// VMSetCondReasonInitialize - vmset initialize
-	VMSetCondReasonInitialize ConditionReason = "OpenStackVMSetInitialize"
+	VMSetCondReasonInitialize ospdirectorshared.ConditionReason = "OpenStackVMSetInitialize"
 	// VMSetCondReasonProvisioning - vmset provisioning
-	VMSetCondReasonProvisioning ConditionReason = "OpenStackVMSetProvisioning"
+	VMSetCondReasonProvisioning ospdirectorshared.ConditionReason = "OpenStackVMSetProvisioning"
 	// VMSetCondReasonDeprovisioning - vmset deprovisioning
-	VMSetCondReasonDeprovisioning ConditionReason = "OpenStackVMSetDeprovisioning"
+	VMSetCondReasonDeprovisioning ospdirectorshared.ConditionReason = "OpenStackVMSetDeprovisioning"
 	// VMSetCondReasonProvisioned - vmset provisioned
-	VMSetCondReasonProvisioned ConditionReason = "OpenStackVMSetProvisioned"
+	VMSetCondReasonProvisioned ospdirectorshared.ConditionReason = "OpenStackVMSetProvisioned"
 	// VMSetCondReasonCreated - vmset created
-	VMSetCondReasonCreated ConditionReason = "OpenStackVMSetCreated"
+	VMSetCondReasonCreated ospdirectorshared.ConditionReason = "OpenStackVMSetCreated"
 
 	// VMSetCondReasonNamespaceFencingDataError - error creating the namespace fencing data
-	VMSetCondReasonNamespaceFencingDataError ConditionReason = "NamespaceFencingDataError"
+	VMSetCondReasonNamespaceFencingDataError ospdirectorshared.ConditionReason = "NamespaceFencingDataError"
 	// VMSetCondReasonKubevirtFencingServiceAccountError - error creating/reading the KubevirtFencingServiceAccount secret
-	VMSetCondReasonKubevirtFencingServiceAccountError ConditionReason = "KubevirtFencingServiceAccountError"
+	VMSetCondReasonKubevirtFencingServiceAccountError ospdirectorshared.ConditionReason = "KubevirtFencingServiceAccountError"
 	// VMSetCondReasonKubeConfigError - error getting the KubeConfig used by the operator
-	VMSetCondReasonKubeConfigError ConditionReason = "KubeConfigError"
+	VMSetCondReasonKubeConfigError ospdirectorshared.ConditionReason = "KubeConfigError"
 	// VMSetCondReasonCloudInitSecretError - error creating the CloudInitSecret
-	VMSetCondReasonCloudInitSecretError ConditionReason = "CloudInitSecretError"
+	VMSetCondReasonCloudInitSecretError ospdirectorshared.ConditionReason = "CloudInitSecretError"
 	// VMSetCondReasonDeploymentSecretMissing - deployment secret does not exist
-	VMSetCondReasonDeploymentSecretMissing ConditionReason = "DeploymentSecretMissing"
+	VMSetCondReasonDeploymentSecretMissing ospdirectorshared.ConditionReason = "DeploymentSecretMissing"
 	// VMSetCondReasonDeploymentSecretError - deployment secret error
-	VMSetCondReasonDeploymentSecretError ConditionReason = "DeploymentSecretError"
+	VMSetCondReasonDeploymentSecretError ospdirectorshared.ConditionReason = "DeploymentSecretError"
 	// VMSetCondReasonPasswordSecretMissing - password secret does not exist
-	VMSetCondReasonPasswordSecretMissing ConditionReason = "PasswordSecretMissing"
+	VMSetCondReasonPasswordSecretMissing ospdirectorshared.ConditionReason = "PasswordSecretMissing"
 	// VMSetCondReasonPasswordSecretError - password secret error
-	VMSetCondReasonPasswordSecretError ConditionReason = "PasswordSecretError"
+	VMSetCondReasonPasswordSecretError ospdirectorshared.ConditionReason = "PasswordSecretError"
 
 	// VMSetCondReasonVirtualMachineGetError - failed to get virtual machine
-	VMSetCondReasonVirtualMachineGetError ConditionReason = "VirtualMachineGetError"
+	VMSetCondReasonVirtualMachineGetError ospdirectorshared.ConditionReason = "VirtualMachineGetError"
 	// VMSetCondReasonVirtualMachineAnnotationMissmatch - Unable to find sufficient amount of VirtualMachine replicas annotated for scale-down
-	VMSetCondReasonVirtualMachineAnnotationMissmatch ConditionReason = "VirtualMachineAnnotationMissmatch"
+	VMSetCondReasonVirtualMachineAnnotationMissmatch ospdirectorshared.ConditionReason = "VirtualMachineAnnotationMissmatch"
 	// VMSetCondReasonVirtualMachineNetworkDataError - Error creating VM NetworkData
-	VMSetCondReasonVirtualMachineNetworkDataError ConditionReason = "VMSetCondReasonVirtualMachineNetworkDataError"
+	VMSetCondReasonVirtualMachineNetworkDataError ospdirectorshared.ConditionReason = "VMSetCondReasonVirtualMachineNetworkDataError"
 	// VMSetCondReasonVirtualMachineProvisioning - virtual machine provisioning in progress
-	VMSetCondReasonVirtualMachineProvisioning ConditionReason = "VirtualMachineProvisioning"
+	VMSetCondReasonVirtualMachineProvisioning ospdirectorshared.ConditionReason = "VirtualMachineProvisioning"
 	// VMSetCondReasonVirtualMachineDeprovisioning - virtual machine deprovisioning in progress
-	VMSetCondReasonVirtualMachineDeprovisioning ConditionReason = "VirtualMachineDeprovisioning"
+	VMSetCondReasonVirtualMachineDeprovisioning ospdirectorshared.ConditionReason = "VirtualMachineDeprovisioning"
 	// VMSetCondReasonVirtualMachineProvisioned - virtual machines provisioned
-	VMSetCondReasonVirtualMachineProvisioned ConditionReason = "VirtualMachineProvisioned"
+	VMSetCondReasonVirtualMachineProvisioned ospdirectorshared.ConditionReason = "VirtualMachineProvisioned"
 	// VMSetCondReasonVirtualMachineCountZero - no virtual machines requested
-	VMSetCondReasonVirtualMachineCountZero ConditionReason = "VirtualMachineCountZero"
+	VMSetCondReasonVirtualMachineCountZero ospdirectorshared.ConditionReason = "VirtualMachineCountZero"
 
 	// VMSetCondReasonPersitentVolumeClaimNotFound - Persitent Volume Claim Not Found
-	VMSetCondReasonPersitentVolumeClaimNotFound ConditionReason = "PersitentVolumeClaimNotFound"
+	VMSetCondReasonPersitentVolumeClaimNotFound ospdirectorshared.ConditionReason = "PersitentVolumeClaimNotFound"
 	// VMSetCondReasonPersitentVolumeClaimError - Persitent Volume Claim error
-	VMSetCondReasonPersitentVolumeClaimError ConditionReason = "PersitentVolumeClaimError"
+	VMSetCondReasonPersitentVolumeClaimError ospdirectorshared.ConditionReason = "PersitentVolumeClaimError"
 	// VMSetCondReasonPersitentVolumeClaimCreating - Persitent Volume Claim create in progress
-	VMSetCondReasonPersitentVolumeClaimCreating ConditionReason = "PersitentVolumeClaimCreating"
+	VMSetCondReasonPersitentVolumeClaimCreating ospdirectorshared.ConditionReason = "PersitentVolumeClaimCreating"
 	// VMSetCondReasonBaseImageNotReady - VM base image not ready
-	VMSetCondReasonBaseImageNotReady ConditionReason = "BaseImageNotReady"
+	VMSetCondReasonBaseImageNotReady ospdirectorshared.ConditionReason = "BaseImageNotReady"
 )
 
 // Host -

@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
 	openstackipset "github.com/openstack-k8s-operators/osp-director-operator/pkg/openstackipset"
@@ -135,7 +136,7 @@ func (r *OpenStackVMSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		)
 	}
 
-	defer func(cond *ospdirectorv1beta1.Condition) {
+	defer func(cond *ospdirectorshared.Condition) {
 		//
 		// Update object conditions
 		//
@@ -202,8 +203,8 @@ func (r *OpenStackVMSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		err = r.Update(ctx, instance)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to update %s %s", instance.Kind, instance.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonRemoveFinalizerError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonRemoveFinalizerError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -264,8 +265,8 @@ func (r *OpenStackVMSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		err = r.Update(ctx, instance)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to update %s %s", instance.Kind, instance.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonAddOSNetLabelError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonAddOSNetLabelError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -293,11 +294,11 @@ func (r *OpenStackVMSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		r,
 		instance,
 		cond,
-		ospdirectorv1beta1.ConditionDetails{
-			ConditionNotFoundType:   ospdirectorv1beta1.CommonCondTypeWaiting,
-			ConditionNotFoundReason: ospdirectorv1beta1.CommonCondReasonDeploymentSecretMissing,
-			ConditionErrorType:      ospdirectorv1beta1.CommonCondTypeError,
-			ConditionErrordReason:   ospdirectorv1beta1.CommonCondReasonDeploymentSecretError,
+		ospdirectorshared.ConditionDetails{
+			ConditionNotFoundType:   ospdirectorshared.CommonCondTypeWaiting,
+			ConditionNotFoundReason: ospdirectorshared.CommonCondReasonDeploymentSecretMissing,
+			ConditionErrorType:      ospdirectorshared.CommonCondTypeError,
+			ConditionErrordReason:   ospdirectorshared.CommonCondReasonDeploymentSecretError,
 		},
 		instance.Spec.DeploymentSSHSecret,
 		20,
@@ -312,7 +313,7 @@ func (r *OpenStackVMSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	//
 	osNetCfg, err := ospdirectorv1beta1.GetOsNetCfg(r.GetClient(), instance.GetNamespace(), instance.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel])
 	if err != nil {
-		cond.Type = ospdirectorv1beta1.CommonCondTypeError
+		cond.Type = ospdirectorshared.CommonCondTypeError
 		cond.Reason = ospdirectorv1beta1.NetConfigCondReasonError
 		cond.Message = fmt.Sprintf("error getting OpenStackNetConfig %s: %s",
 			instance.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel],
@@ -501,7 +502,7 @@ func (r *OpenStackVMSetReconciler) getNormalizedStatus(status *ospdirectorv1beta
 func (r *OpenStackVMSetReconciler) generateNamespaceFencingData(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) error {
 	// Ensure that a namespace-scoped kubevirt fencing agent service account token secret has been
 	// created for any OSVMSet instances in this instance's namespace (all OSVMSets in this namespace
@@ -530,8 +531,8 @@ func (r *OpenStackVMSetReconciler) generateNamespaceFencingData(
 
 	if err := common.EnsureSecrets(ctx, r, instance, saSecretTemplate, nil); err != nil {
 		cond.Message = "Error creating Kubevirt Fencing ServiceAccount Secret"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonKubevirtFencingServiceAccountError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonKubevirtFencingServiceAccountError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -545,8 +546,8 @@ func (r *OpenStackVMSetReconciler) generateNamespaceFencingData(
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
 		cond.Message = "Error getting kubeconfig used by the operator"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonKubeConfigError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonKubeConfigError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -560,8 +561,8 @@ func (r *OpenStackVMSetReconciler) generateNamespaceFencingData(
 	kubevirtAgentTokenSecret, err := r.Kclient.CoreV1().Secrets(instance.Namespace).Get(ctx, vmset.KubevirtFencingServiceAccountSecret, metav1.GetOptions{})
 	if err != nil {
 		cond.Message = "Error getting the Kubevirt Fencing ServiceAccount Secret"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonKubevirtFencingServiceAccountError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonKubevirtFencingServiceAccountError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -585,8 +586,8 @@ func (r *OpenStackVMSetReconciler) generateNamespaceFencingData(
 	err = common.EnsureSecrets(ctx, r, instance, kubeconfigTemplate, nil)
 	if err != nil {
 		cond.Message = "Error creating secret holding the kubeconfig used by the pacemaker fencing agent"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonNamespaceFencingDataError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonNamespaceFencingDataError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -598,7 +599,7 @@ func (r *OpenStackVMSetReconciler) generateNamespaceFencingData(
 func (r *OpenStackVMSetReconciler) generateVirtualMachineNetworkData(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	osNetCfg *ospdirectorv1beta1.OpenStackNetConfig,
 	envVars *map[string]common.EnvSetter,
 	templateParameters map[string]interface{},
@@ -633,13 +634,13 @@ func (r *OpenStackVMSetReconciler) generateVirtualMachineNetworkData(
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			cond.Message = fmt.Sprintf("OpenStackNet with NameLower %s not found!", netNameLower)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetNotFound)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetNotFound)
 		} else {
 			// Error reading the object - requeue the request.
 			cond.Message = fmt.Sprintf("Error getting OSNet with labelSelector %v", labelSelector)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
 		}
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -677,7 +678,7 @@ func (r *OpenStackVMSetReconciler) generateVirtualMachineNetworkData(
 func (r *OpenStackVMSetReconciler) virtualMachineListFinalizerCleanup(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	virtualMachineList *virtv1.VirtualMachineList,
 ) error {
 	r.Log.Info(fmt.Sprintf("Removing finalizers from VirtualMachines in VMSet: %s", instance.Name))
@@ -696,15 +697,15 @@ func (r *OpenStackVMSetReconciler) virtualMachineListFinalizerCleanup(
 func (r *OpenStackVMSetReconciler) virtualMachineFinalizerCleanup(
 	ctx context.Context,
 	virtualMachine *virtv1.VirtualMachine,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) error {
 	controllerutil.RemoveFinalizer(virtualMachine, vmset.FinalizerName)
 	err := r.Update(ctx, virtualMachine)
 
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to update %s %s", virtualMachine.Kind, virtualMachine.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonRemoveFinalizerError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonRemoveFinalizerError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 		err = common.WrapErrorForObject(cond.Message, virtualMachine, err)
 
@@ -733,7 +734,7 @@ func (r *OpenStackVMSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *OpenStackVMSetReconciler) vmCreateInstance(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	envVars map[string]common.EnvSetter,
 	ctl *ospdirectorv1beta1.Host,
 	osNetBindings map[string]ospdirectorv1beta1.AttachType,
@@ -753,8 +754,8 @@ func (r *OpenStackVMSetReconciler) vmCreateInstance(
 		} else {
 			cond.Message = fmt.Sprintf("Error CloudInit userdata %s secret", userdataSecret)
 		}
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonCloudInitSecretError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonCloudInitSecretError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -963,8 +964,8 @@ func (r *OpenStackVMSetReconciler) vmCreateInstance(
 				}
 				// Error reading the object - requeue the request.
 				cond.Message = fmt.Sprintf("Error getting OSNet with labelSelector %v", labelSelector)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
 				return err
@@ -974,8 +975,8 @@ func (r *OpenStackVMSetReconciler) vmCreateInstance(
 				cond.Message = fmt.Sprintf("OpenStackVMSet vmCreateInstance: No binding type found %s - available bindings: %v",
 					network.Name,
 					osNetBindings)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 				return fmt.Errorf(cond.Message)
 			}
@@ -998,8 +999,8 @@ func (r *OpenStackVMSetReconciler) vmCreateInstance(
 		err := controllerutil.SetControllerReference(instance, vm, r.Scheme)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Error set controller reference for %s", vm.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonControllerReferenceError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonControllerReferenceError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return err
@@ -1038,7 +1039,7 @@ func (r *OpenStackVMSetReconciler) vmCreateInstance(
 func (r *OpenStackVMSetReconciler) getPasswordSecret(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) (string, ctrl.Result, error) {
 
 	passwordSecret, _, err := common.GetSecret(ctx, r, instance.Spec.PasswordSecret, instance.Namespace)
@@ -1046,8 +1047,8 @@ func (r *OpenStackVMSetReconciler) getPasswordSecret(
 		if k8s_errors.IsNotFound(err) {
 			timeout := 30
 			cond.Message = fmt.Sprintf("PasswordSecret %s not found but specified in CR, next reconcile in %d s", instance.Spec.PasswordSecret, timeout)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPasswordSecretMissing)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPasswordSecretMissing)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 
 			common.LogForObject(r, cond.Message, instance)
 
@@ -1055,8 +1056,8 @@ func (r *OpenStackVMSetReconciler) getPasswordSecret(
 		}
 		// Error reading the object - requeue the request.
 		cond.Message = fmt.Sprintf("Error reading PasswordSecret: %s", instance.Spec.PasswordSecret)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPasswordSecretError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPasswordSecretError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return "", ctrl.Result{}, err
@@ -1076,7 +1077,7 @@ func (r *OpenStackVMSetReconciler) getPasswordSecret(
 func (r *OpenStackVMSetReconciler) createCloudInitSecret(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	envVars map[string]common.EnvSetter,
 	secretLabels map[string]string,
 	templateParameters map[string]interface{},
@@ -1097,8 +1098,8 @@ func (r *OpenStackVMSetReconciler) createCloudInitSecret(
 	err := common.EnsureSecrets(ctx, r, instance, cloudinit, &envVars)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Error creating CloudInitSecret secret for the vmset %s", instance.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonCloudInitSecretError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonCloudInitSecretError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -1112,7 +1113,7 @@ func (r *OpenStackVMSetReconciler) createCloudInitSecret(
 func (r *OpenStackVMSetReconciler) verifyNetworkAttachments(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	osNetBindings map[string]ospdirectorv1beta1.AttachType,
 ) (map[string]networkv1.NetworkAttachmentDefinition, ctrl.Result, error) {
 	// Verify that NetworkAttachmentDefinition for each non-SRIOV-configured network exists, and...
@@ -1138,7 +1139,7 @@ func (r *OpenStackVMSetReconciler) verifyNetworkAttachments(
 	for _, netNameLower := range instance.Spec.Networks {
 		timeout := 10
 
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 
 		// get network with name_lower label
 		network, err := ospdirectorv1beta1.GetOpenStackNetWithLabel(
@@ -1150,8 +1151,8 @@ func (r *OpenStackVMSetReconciler) verifyNetworkAttachments(
 		if err != nil {
 			if k8s_errors.IsNotFound(err) {
 				cond.Message = fmt.Sprintf("OpenStackNet with NameLower %s not found!", netNameLower)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetNotFound)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetNotFound)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 
 				common.LogForObject(r, cond.Message, instance)
 
@@ -1159,8 +1160,8 @@ func (r *OpenStackVMSetReconciler) verifyNetworkAttachments(
 			}
 			// Error reading the object - requeue the request.
 			cond.Message = fmt.Sprintf("Error reading OpenStackNet with NameLower %s not found!", netNameLower)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return nadMap, ctrl.Result{}, err
@@ -1195,7 +1196,7 @@ func (r *OpenStackVMSetReconciler) verifyNetworkAttachments(
 func (r *OpenStackVMSetReconciler) checkVMsAnnotatedForDeletion(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) error {
 	// check for deletion marked VMs
 	currentVMHostsStatus := instance.Status.DeepCopy().VMHosts
@@ -1244,8 +1245,8 @@ func (r *OpenStackVMSetReconciler) checkVMsAnnotatedForDeletion(
 		err = r.Status().Update(context.Background(), instance)
 		if err != nil {
 			cond.Message = "Failed to update CR status for annotated for deletion marked VMs"
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonCRStatusUpdateError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonCRStatusUpdateError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return err
@@ -1258,7 +1259,7 @@ func (r *OpenStackVMSetReconciler) checkVMsAnnotatedForDeletion(
 func (r *OpenStackVMSetReconciler) getDeletedVMOSPHostnames(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) ([]string, error) {
 
 	var annotatedVMs []string
@@ -1272,8 +1273,8 @@ func (r *OpenStackVMSetReconciler) getDeletedVMOSPHostnames(
 	vmHostList, err := common.GetVirtualMachines(ctx, r, instance.Namespace, labelSelector)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to get virtual machines with labelSelector %v ", labelSelector)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineGetError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineGetError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return annotatedVMs, err
@@ -1304,7 +1305,7 @@ func (r *OpenStackVMSetReconciler) getDeletedVMOSPHostnames(
 func (r *OpenStackVMSetReconciler) createBaseImage(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) (string, ctrl.Result, error) {
 	baseImageName := fmt.Sprintf("osp-vmset-baseimage-%s", instance.UID[0:4])
 	if instance.Spec.BaseImageVolumeName != "" {
@@ -1322,15 +1323,15 @@ func (r *OpenStackVMSetReconciler) createBaseImage(
 	err := r.Get(ctx, types.NamespacedName{Name: baseImageName, Namespace: instance.Namespace}, pvc)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		cond.Message = fmt.Sprintf("PersistentVolumeClaim %s not found reconcile again in 10 seconds", baseImageName)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPersitentVolumeClaimNotFound)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPersitentVolumeClaimNotFound)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 		common.LogForObject(r, cond.Message, instance)
 
 		return baseImageName, ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	} else if err != nil {
 		cond.Message = fmt.Sprintf("Failed to get persitent volume claim %s ", baseImageName)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPersitentVolumeClaimError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPersitentVolumeClaimError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return baseImageName, ctrl.Result{}, err
@@ -1341,8 +1342,8 @@ func (r *OpenStackVMSetReconciler) createBaseImage(
 		instance.Status.BaseImageDVReady = false
 
 		cond.Message = fmt.Sprintf("VM base image %s creation still in running state, reconcile in 2min", baseImageName)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPersitentVolumeClaimCreating)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonPersitentVolumeClaimCreating)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 		common.LogForObject(r, cond.Message, instance)
 
 		return baseImageName, ctrl.Result{RequeueAfter: time.Duration(2) * time.Minute}, nil
@@ -1356,7 +1357,7 @@ func (r *OpenStackVMSetReconciler) createBaseImage(
 func (r *OpenStackVMSetReconciler) doVMDelete(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	virtualMachineList *virtv1.VirtualMachineList,
 ) ([]string, error) {
 	existingVirtualMachines := map[string]string{}
@@ -1406,8 +1407,8 @@ func (r *OpenStackVMSetReconciler) doVMDelete(
 			cond.Message = fmt.Sprintf("Unable to find sufficient amount of VirtualMachine replicas annotated for scale-down (%d found, %d requested)",
 				len(removalAnnotatedVirtualMachines),
 				oldVmsToRemoveCount)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineAnnotationMissmatch)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineAnnotationMissmatch)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 			common.LogForObject(r, cond.Message, instance)
 		}
 	}
@@ -1420,7 +1421,7 @@ func (r *OpenStackVMSetReconciler) doVMDelete(
 func (r *OpenStackVMSetReconciler) virtualMachineDeprovision(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	virtualMachine *virtv1.VirtualMachine,
 ) (string, error) {
 	r.Log.Info(fmt.Sprintf("Deallocating VirtualMachine: %s", virtualMachine.Name))
@@ -1467,7 +1468,7 @@ func (r *OpenStackVMSetReconciler) virtualMachineDeprovision(
 func (r *OpenStackVMSetReconciler) createNetworkData(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	osNetCfg *ospdirectorv1beta1.OpenStackNetConfig,
 	nadMap map[string]networkv1.NetworkAttachmentDefinition,
 	envVars map[string]common.EnvSetter,
@@ -1509,8 +1510,8 @@ func (r *OpenStackVMSetReconciler) createNetworkData(
 		)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Error creating VM NetworkData for %s ", vm.Hostname)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineNetworkDataError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineNetworkDataError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return err
@@ -1554,7 +1555,7 @@ func (r *OpenStackVMSetReconciler) createNetworkData(
 func (r *OpenStackVMSetReconciler) createVMs(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackVMSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	envVars map[string]common.EnvSetter,
 	osNetBindings map[string]ospdirectorv1beta1.AttachType,
 	baseImageName string,
@@ -1581,27 +1582,27 @@ func (r *OpenStackVMSetReconciler) createVMs(
 
 		switch readyCount := instance.Status.ProvisioningStatus.ReadyCount; {
 		case readyCount == instance.Spec.VMCount && readyCount == 0:
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.VMSetCondTypeEmpty)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineCountZero)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.VMSetCondTypeEmpty)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineCountZero)
 			cond.Message = "No VirtualMachines have been requested"
 		case readyCount == instance.Spec.VMCount:
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.VMSetCondTypeProvisioned)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineProvisioned)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.VMSetCondTypeProvisioned)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineProvisioned)
 			cond.Message = "All requested VirtualMachines have been provisioned"
 		case readyCount < instance.Spec.VMCount:
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.VMSetCondTypeProvisioning)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineProvisioning)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.VMSetCondTypeProvisioning)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineProvisioning)
 			cond.Message = "Provisioning of VirtualMachines in progress"
 		default:
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.VMSetCondTypeDeprovisioning)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineDeprovisioning)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.VMSetCondTypeDeprovisioning)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonVirtualMachineDeprovisioning)
 			cond.Message = "Deprovisioning of VirtualMachines in progress"
 		}
 
 	} else {
 		cond.Message = fmt.Sprintf("BaseImageDV is not ready for OpenStackVMSet %s", instance.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.VMSetCondReasonBaseImageNotReady)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeWaiting)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.VMSetCondReasonBaseImageNotReady)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeWaiting)
 
 		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}

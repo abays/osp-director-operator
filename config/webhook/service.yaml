@@ -8,7 +8,7 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: webhook-server-cert
 spec:
   ports:
-    - port: 4343
+    - port: 443
       targetPort: 4343
       protocol: TCP
   selector:

@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -89,17 +90,17 @@ const (
 	//
 
 	// MACCondReasonRemovedIPs - the removed MAC reservations
-	MACCondReasonRemovedIPs ConditionReason = "RemovedIPs"
+	MACCondReasonRemovedIPs ospdirectorshared.ConditionReason = "RemovedIPs"
 	// MACCondReasonNetNotFound - osnet not found
-	MACCondReasonNetNotFound ConditionReason = "NetNotFound"
+	MACCondReasonNetNotFound ospdirectorshared.ConditionReason = "NetNotFound"
 	// MACCondReasonCreateMACError - error creating MAC address
-	MACCondReasonCreateMACError ConditionReason = "CreateMACError"
+	MACCondReasonCreateMACError ospdirectorshared.ConditionReason = "CreateMACError"
 	// MACCondReasonAllMACAddressesCreated - all MAC addresses created
-	MACCondReasonAllMACAddressesCreated ConditionReason = "MACAddressesCreated"
+	MACCondReasonAllMACAddressesCreated ospdirectorshared.ConditionReason = "MACAddressesCreated"
 	// MACCondReasonError - General error getting the OSMACaddr object
-	MACCondReasonError ConditionReason = "MACError"
+	MACCondReasonError ospdirectorshared.ConditionReason = "MACError"
 	// MACCondReasonMACNotFound - osmacaddr object not found
-	MACCondReasonMACNotFound ConditionReason = "OpenStackMACNotFound"
+	MACCondReasonMACNotFound ospdirectorshared.ConditionReason = "OpenStackMACNotFound"
 )
 
 // OpenStackMACAddressStatus defines the observed state of OpenStackMACAddress
@@ -114,7 +115,7 @@ type OpenStackMACAddressStatus struct {
 	CurrentState ProvisioningState `json:"currentState"`
 
 	// Conditions - conditions to display in the OpenShift GUI, which reflect CurrentState
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 }
 
 // IsReady - Is this resource in its fully-configured (quiesced) state?

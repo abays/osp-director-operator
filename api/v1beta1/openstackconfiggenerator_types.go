@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -58,7 +59,7 @@ type OpenStackConfigGeneratorStatus struct {
 	CurrentReason ConfigGeneratorReason `json:"currentReason"`
 
 	// Conditions
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 }
 
 // ConfigGeneratorState - the state of the execution of this config generator
@@ -135,7 +136,7 @@ const (
 func (instance *OpenStackConfigGenerator) IsReady() bool {
 	cond := instance.Status.Conditions.InitCondition()
 
-	return cond.Type == ConditionType(ConfigGeneratorCondTypeFinished) && cond.Reason == ConditionReason(ConfigGeneratorCondReasonJobFinished)
+	return cond.Type == ospdirectorshared.ConditionType(ConfigGeneratorCondTypeFinished) && cond.Reason == ospdirectorshared.ConditionReason(ConfigGeneratorCondReasonJobFinished)
 }
 
 // +kubebuilder:object:root=true

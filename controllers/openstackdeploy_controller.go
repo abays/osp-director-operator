@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/go-logr/logr"
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	common "github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
 	"github.com/openstack-k8s-operators/osp-director-operator/pkg/openstackdeploy"
@@ -92,7 +93,7 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	//
 	// initialize condition
 	//
-	cond := &ospdirectorv1beta1.Condition{}
+	cond := &ospdirectorshared.Condition{}
 
 	//
 	// Used in comparisons below to determine whether a status update is actually needed
@@ -105,12 +106,12 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		)
 	}
 
-	defer func(cond *ospdirectorv1beta1.Condition) {
+	defer func(cond *ospdirectorshared.Condition) {
 		//
 		// Update object conditions
 		//
 		instance.Status.CurrentState = ospdirectorv1beta1.ProvisioningState(cond.Type)
-		instance.Status.CurrentReason = ospdirectorv1beta1.ConditionReason(cond.Message)
+		instance.Status.CurrentReason = ospdirectorshared.ConditionReason(cond.Message)
 
 		instance.Status.Conditions.UpdateCurrentCondition(
 			cond.Type,
@@ -130,8 +131,8 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	err = r.GetClient().Get(ctx, types.NamespacedName{Name: instance.Spec.ConfigGenerator, Namespace: instance.Namespace}, configGenerator)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		cond.Message = err.Error()
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonConfigVersionNotFound)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonConfigVersionNotFound)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return ctrl.Result{}, err
@@ -167,8 +168,8 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			if err != nil {
 
 				cond.Message = err.Error()
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobCreated)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobCreated)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
 				return err
@@ -182,8 +183,8 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 		if op != controllerutil.OperationResultNone {
 			cond.Message = fmt.Sprintf("Job successfully created/updated - operation: %s", string(op))
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobCreated)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeInitializing)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobCreated)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeInitializing)
 			common.LogForObject(r, cond.Message, instance)
 
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
@@ -195,16 +196,16 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			_, err = common.DeleteJob(ctx, job, r.Kclient, r.Log)
 			if err != nil {
 				cond.Message = err.Error()
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobDelete)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobDelete)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
 				return ctrl.Result{}, err
 			}
 
 			cond.Message = "ConfigVersion has changed. Requeing to start again..."
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonCVUpdated)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeInitializing)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonCVUpdated)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeInitializing)
 			common.LogForObject(r, cond.Message, instance)
 
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
@@ -217,15 +218,15 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if err != nil {
 			// the job failed in error
 			cond.Message = "Job failed... Please check job/pod logs."
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobFailed)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobFailed)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return ctrl.Result{}, err
 		} else if requeue {
 			cond.Message = "Waiting on OpenStack Deployment..."
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonConfigCreate)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeRunning)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonConfigCreate)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeRunning)
 			common.LogForObject(r, cond.Message, instance)
 
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
@@ -233,8 +234,8 @@ func (r *OpenStackDeployReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	cond.Message = "The OpenStackDeploy Finished."
-	cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobFinished)
-	cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.DeployCondTypeFinished)
+	cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.DeployCondReasonJobFinished)
+	cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.DeployCondTypeFinished)
 	common.LogForObject(r, cond.Message, instance)
 
 	// set ownership on the ConfigMap created by our Deployment container

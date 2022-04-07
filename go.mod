@@ -30,6 +30,7 @@ require (
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
+	knative.dev/pkg v0.0.0-20210706174620-fe90576475ca
 	kubevirt.io/client-go v0.34.2
 	kubevirt.io/containerized-data-importer v1.40.0
 	sigs.k8s.io/controller-runtime v0.10.0

@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
+	ospdirectorv1beta2 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta2"
 	"github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
 	"github.com/openstack-k8s-operators/osp-director-operator/pkg/openstackconfiggenerator"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -150,7 +151,7 @@ func GetCRLists(
 func GetConfigMapList(
 	ctx context.Context,
 	r common.ReconcilerCommon,
-	request *ospdirectorv1beta1.OpenStackBackupRequest,
+	request *ospdirectorv1beta2.OpenStackBackupRequest,
 	desiredCrs *ospdirectorv1beta1.CrsForBackup,
 ) (corev1.ConfigMapList, error) {
 	configMapList := &corev1.ConfigMapList{}
@@ -243,7 +244,7 @@ func addConfigMapToList(
 func GetSecretList(
 	ctx context.Context,
 	r common.ReconcilerCommon,
-	request *ospdirectorv1beta1.OpenStackBackupRequest,
+	request *ospdirectorv1beta2.OpenStackBackupRequest,
 	desiredCrs *ospdirectorv1beta1.CrsForBackup,
 ) (corev1.SecretList, error) {
 	secretList := &corev1.SecretList{}
@@ -350,7 +351,7 @@ func addSecretToList(
 }
 
 // GetAreControllersQuiesced - returns true if all desired CRs for backup are in their respective "finished" state, or false with a list of "bad" CRs if otherwise
-func GetAreControllersQuiesced(instance *ospdirectorv1beta1.OpenStackBackupRequest, crLists ospdirectorv1beta1.CrsForBackup) (bool, []client.Object) {
+func GetAreControllersQuiesced(instance *ospdirectorv1beta2.OpenStackBackupRequest, crLists ospdirectorv1beta1.CrsForBackup) (bool, []client.Object) {
 	badCrs := []client.Object{}
 
 	// Check provisioning status of all OpenStackBaremetalSets

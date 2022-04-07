@@ -60,8 +60,25 @@ sed -z -e 's!\(DOWNLOADER_IMAGE_URL_DEFAULT\n\s\+value: \)\S\+!\1'${DOWNLOADER_I
 # HACKs for webhook deployment to work around: https://bugzilla.redhat.com/show_bug.cgi?id=1921000
 # TODO: Figure out how to do this via Kustomize so that it's automatically rolled into the make
 #       commands above
-sed -i '/^    webhookPath:.*/a #added\n    containerPort: 4343\n    targetPort: 4343' ${CLUSTER_BUNDLE_FILE}
+sed -i '/^    webhookPath:.*/a #added\n    containerPort: 443\n    targetPort: 4343' ${CLUSTER_BUNDLE_FILE}
 sed -i 's/deploymentName: webhook/deploymentName: osp-director-operator-controller-manager/g' ${CLUSTER_BUNDLE_FILE}
+# Even dirtier HACKs for example conversion webhook for OpenStackBackupRequest
+#sed -i 's/name: webhook-service/name: osp-director-operator-controller-manager-service/g' bundle/manifests/osp-director.openstack.org_openstackbackuprequests.yaml
+#sed -i 's/namespace: system/namespace: openstack/g' bundle/manifests/osp-director.openstack.org_openstackbackuprequests.yaml
+
+# webhookdefinitions:
+#   - admissionReviewVersions:
+#     - v1beta1
+#     - v1beta2
+#     containerPort: 443
+#     conversionCRDs:
+#     - openstackbackuprequests.osp-director.openstack.org
+#     deploymentName: osp-director-operator-controller-manager
+#     generateName: copenstackbackuprequests.kb.io
+#     sideEffects: None
+#     targetPort: 4343
+#     type: ConversionWebhook
+#     webhookPath: /convert
 
 # Convert any tags to digests within the CSV (for offline/air gapped environments)
 for csv_image in $(cat ${CLUSTER_BUNDLE_FILE} | grep "image:" | sed -e "s|.*image:||" | sort -u); do

@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"context"
 
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -42,7 +43,7 @@ type OpenStackProvisionServerSpec struct {
 // OpenStackProvisionServerStatus defines the observed state of OpenStackProvisionServer
 type OpenStackProvisionServerStatus struct {
 	// Surfaces status in GUI
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 	// Holds provisioning status for this provision server
 	ProvisioningStatus OpenStackProvisionServerProvisioningStatus `json:"provisioningStatus,omitempty"`
 	// IP of the provisioning interface on the node running the ProvisionServer pod
@@ -73,29 +74,29 @@ const (
 	//
 
 	// OpenStackProvisionServerCondReasonListError - osprovserver list objects error
-	OpenStackProvisionServerCondReasonListError ConditionReason = "OpenStackProvisionServerListError"
+	OpenStackProvisionServerCondReasonListError ospdirectorshared.ConditionReason = "OpenStackProvisionServerListError"
 	// OpenStackProvisionServerCondReasonGetError - osprovserver list objects error
-	OpenStackProvisionServerCondReasonGetError ConditionReason = "OpenStackProvisionServerCondReasonGetError"
+	OpenStackProvisionServerCondReasonGetError ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonGetError"
 	// OpenStackProvisionServerCondReasonNotFound - osprovserver object not found
-	OpenStackProvisionServerCondReasonNotFound ConditionReason = "OpenStackProvisionServerNotFound"
+	OpenStackProvisionServerCondReasonNotFound ospdirectorshared.ConditionReason = "OpenStackProvisionServerNotFound"
 	// OpenStackProvisionServerCondReasonInterfaceAcquireError - osprovserver hit an error while finding provisioning interface name
-	OpenStackProvisionServerCondReasonInterfaceAcquireError ConditionReason = "OpenStackProvisionServerCondReasonInterfaceAcquireError"
+	OpenStackProvisionServerCondReasonInterfaceAcquireError ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonInterfaceAcquireError"
 	// OpenStackProvisionServerCondReasonInterfaceNotFound - osprovserver unable to find provisioning interface name
-	OpenStackProvisionServerCondReasonInterfaceNotFound ConditionReason = "OpenStackProvisionServerCondReasonInterfaceNotFound"
+	OpenStackProvisionServerCondReasonInterfaceNotFound ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonInterfaceNotFound"
 	// OpenStackProvisionServerCondReasonDeploymentError - osprovserver associated deployment failed to create/update
-	OpenStackProvisionServerCondReasonDeploymentError ConditionReason = "OpenStackProvisionServerCondReasonDeploymentError"
+	OpenStackProvisionServerCondReasonDeploymentError ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonDeploymentError"
 	// OpenStackProvisionServerCondReasonDeploymentCreated - osprovserver associated deployment has been created/update
-	OpenStackProvisionServerCondReasonDeploymentCreated ConditionReason = "OpenStackProvisionServerCondReasonDeploymentCreated"
+	OpenStackProvisionServerCondReasonDeploymentCreated ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonDeploymentCreated"
 	// OpenStackProvisionServerCondReasonProvisioning - osprovserver associated pod is provisioning
-	OpenStackProvisionServerCondReasonProvisioning ConditionReason = "OpenStackProvisionServerCondReasonProvisioning"
+	OpenStackProvisionServerCondReasonProvisioning ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonProvisioning"
 	// OpenStackProvisionServerCondReasonLocalImageURLParseError - osprovserver was unable to parse its received local image URL
-	OpenStackProvisionServerCondReasonLocalImageURLParseError ConditionReason = "OpenStackProvisionServerCondReasonLocalImageURLParseError"
+	OpenStackProvisionServerCondReasonLocalImageURLParseError ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonLocalImageURLParseError"
 	// OpenStackProvisionServerCondReasonProvisioned - osprovserver associated pod is provisioned
-	OpenStackProvisionServerCondReasonProvisioned ConditionReason = "OpenStackProvisionServerCondReasonProvisioned"
+	OpenStackProvisionServerCondReasonProvisioned ospdirectorshared.ConditionReason = "OpenStackProvisionServerCondReasonProvisioned"
 	// OpenStackProvisionServerCondReasonCreateError - error creating osprov server object
-	OpenStackProvisionServerCondReasonCreateError ConditionReason = "OpenStackProvisionServerCreateError"
+	OpenStackProvisionServerCondReasonCreateError ospdirectorshared.ConditionReason = "OpenStackProvisionServerCreateError"
 	// OpenStackProvisionServerCondReasonCreated - osprov server object created
-	OpenStackProvisionServerCondReasonCreated ConditionReason = "OpenStackProvisionServerCreated"
+	OpenStackProvisionServerCondReasonCreated ospdirectorshared.ConditionReason = "OpenStackProvisionServerCreated"
 )
 
 // IsReady - Is this resource in its fully-configured (quiesced) state?
@@ -130,7 +131,7 @@ type OpenStackProvisionServerList struct {
 
 // GetExistingProvServerPorts - Get all ports currently in use by all OpenStackProvisionServers in this namespace
 func (instance *OpenStackProvisionServer) GetExistingProvServerPorts(
-	cond *Condition,
+	cond *ospdirectorshared.Condition,
 	client goClient.Client,
 ) (map[string]int, error) {
 	found := map[string]int{}
@@ -144,8 +145,8 @@ func (instance *OpenStackProvisionServer) GetExistingProvServerPorts(
 	err := client.List(context.TODO(), provServerList, listOpts...)
 	if err != nil {
 		cond.Message = "Failed to get list of all OpenStackProvisionServer(s)"
-		cond.Reason = ConditionReason(OpenStackProvisionServerCondReasonListError)
-		cond.Type = ConditionType(ProvisionServerCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(OpenStackProvisionServerCondReasonListError)
+		cond.Type = ospdirectorshared.ConditionType(ProvisionServerCondTypeError)
 
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (instance *OpenStackProvisionServer) GetExistingProvServerPorts(
 
 // AssignProvisionServerPort - Assigns an Apache listening port for a particular OpenStackProvisionServer.
 func (instance *OpenStackProvisionServer) AssignProvisionServerPort(
-	cond *Condition,
+	cond *ospdirectorshared.Condition,
 	client goClient.Client,
 	portStart int,
 ) error {

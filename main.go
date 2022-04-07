@@ -44,8 +44,10 @@ import (
 
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/osp-director-operator/controllers"
+
 	//cdiv1 "kubevirt.io/containerized-data-importer/pkg/apis/core/v1alpha1"
 	//templatev1 "github.com/openshift/api/template/v1"
+	ospdirectorv1beta2 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta2"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -76,6 +78,7 @@ func init() {
 	utilruntime.Must(metal3v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(machinev1beta1.AddToScheme(scheme))
 	utilruntime.Must(sriovnetworkv1.AddToScheme(scheme))
+	utilruntime.Must(ospdirectorv1beta2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -387,6 +390,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackBackupRequest")
 			os.Exit(1)
 		}
+		if err = (&ospdirectorv1beta2.OpenStackBackupRequest{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackBackupRequest")
+			os.Exit(1)
+		}
 
 		if err = (&ospdirectorv1beta1.OpenStackDeploy{}).SetupWebhookWithManager(mgr, openstackDeployDefaults); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenStackDeploy")
@@ -403,7 +410,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

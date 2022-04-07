@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,21 +38,21 @@ const (
 	DeployCondTypeError ProvisioningState = "Error"
 
 	// DeployCondReasonJobCreated - job created
-	DeployCondReasonJobCreated ConditionReason = "JobCreated"
+	DeployCondReasonJobCreated ospdirectorshared.ConditionReason = "JobCreated"
 	// DeployCondReasonJobCreateFailed - job create failed
-	DeployCondReasonJobCreateFailed ConditionReason = "JobCreated"
+	DeployCondReasonJobCreateFailed ospdirectorshared.ConditionReason = "JobCreated"
 	// DeployCondReasonJobDelete - job deleted
-	DeployCondReasonJobDelete ConditionReason = "JobDeleted"
+	DeployCondReasonJobDelete ospdirectorshared.ConditionReason = "JobDeleted"
 	// DeployCondReasonJobFinished - job deleted
-	DeployCondReasonJobFinished ConditionReason = "JobFinished"
+	DeployCondReasonJobFinished ospdirectorshared.ConditionReason = "JobFinished"
 	// DeployCondReasonCVUpdated - error creating/update ConfigVersion
-	DeployCondReasonCVUpdated ConditionReason = "ConfigVersionUpdated"
+	DeployCondReasonCVUpdated ospdirectorshared.ConditionReason = "ConfigVersionUpdated"
 	// DeployCondReasonConfigVersionNotFound - error finding ConfigVersion
-	DeployCondReasonConfigVersionNotFound ConditionReason = "ConfigVersionNotFound"
+	DeployCondReasonConfigVersionNotFound ospdirectorshared.ConditionReason = "ConfigVersionNotFound"
 	// DeployCondReasonJobFailed - error creating/update CM
-	DeployCondReasonJobFailed ConditionReason = "JobFailed"
+	DeployCondReasonJobFailed ospdirectorshared.ConditionReason = "JobFailed"
 	// DeployCondReasonConfigCreate - error creating/update CM
-	DeployCondReasonConfigCreate ConditionReason = "ConfigCreate"
+	DeployCondReasonConfigCreate ospdirectorshared.ConditionReason = "ConfigCreate"
 )
 
 // OpenStackDeployAdvancedSettingsSpec defines advanced deployment settings
@@ -111,9 +112,9 @@ type OpenStackDeployStatus struct {
 	CurrentState ProvisioningState `json:"currentState"`
 
 	// CurrentReason
-	CurrentReason ConditionReason `json:"currentReason"`
+	CurrentReason ospdirectorshared.ConditionReason `json:"currentReason"`
 
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 }
 
 //+kubebuilder:object:root=true

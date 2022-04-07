@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 )
 
 const (
@@ -334,7 +334,7 @@ func DeleteSecretsWithLabel(
 func DeleteSecretsWithName(
 	ctx context.Context,
 	r ReconcilerCommon,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	name string,
 	namespace string,
 ) error {
@@ -348,8 +348,8 @@ func DeleteSecretsWithName(
 	err := r.GetClient().Delete(ctx, secret, &client.DeleteOptions{})
 	if err != nil && !k8s_errors.IsNotFound(err) {
 		cond.Message = fmt.Sprintf("Failed to delete %s %s", secret.Kind, secret.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonSecretDeleteError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonSecretDeleteError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 		return err
 	}
@@ -371,8 +371,8 @@ func GetDataFromSecret(
 	ctx context.Context,
 	r ReconcilerCommon,
 	object client.Object,
-	cond *ospdirectorv1beta1.Condition,
-	conditionDetails ospdirectorv1beta1.ConditionDetails,
+	cond *ospdirectorshared.Condition,
+	conditionDetails ospdirectorshared.ConditionDetails,
 	secretName string,
 	requeueTimeout int,
 	key string,
@@ -384,16 +384,16 @@ func GetDataFromSecret(
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			cond.Message = fmt.Sprintf("%s secret does not exist: %v", secretName, err)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(conditionDetails.ConditionNotFoundReason)
-			cond.Type = ospdirectorv1beta1.ConditionType(conditionDetails.ConditionNotFoundType)
+			cond.Reason = ospdirectorshared.ConditionReason(conditionDetails.ConditionNotFoundReason)
+			cond.Type = ospdirectorshared.ConditionType(conditionDetails.ConditionNotFoundType)
 
 			LogForObject(r, cond.Message, object)
 
 			return data, ctrl.Result{RequeueAfter: time.Duration(requeueTimeout) * time.Second}, nil
 		}
 		cond.Message = fmt.Sprintf("Error getting %s Secret: %v", secretName, err)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(conditionDetails.ConditionErrordReason)
-		cond.Type = ospdirectorv1beta1.ConditionType(conditionDetails.ConditionErrorType)
+		cond.Reason = ospdirectorshared.ConditionReason(conditionDetails.ConditionErrordReason)
+		cond.Type = ospdirectorshared.ConditionType(conditionDetails.ConditionErrorType)
 		err = WrapErrorForObject(cond.Message, object, err)
 
 		return data, ctrl.Result{}, err
@@ -405,8 +405,8 @@ func GetDataFromSecret(
 			cond.Message = fmt.Sprintf("%s not found in secret %s",
 				key,
 				secretName)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(conditionDetails.ConditionNotFoundReason)
-			cond.Type = ospdirectorv1beta1.ConditionType(conditionDetails.ConditionErrorType)
+			cond.Reason = ospdirectorshared.ConditionReason(conditionDetails.ConditionNotFoundReason)
+			cond.Type = ospdirectorshared.ConditionType(conditionDetails.ConditionErrorType)
 
 			return data, ctrl.Result{}, fmt.Errorf(cond.Message)
 		}

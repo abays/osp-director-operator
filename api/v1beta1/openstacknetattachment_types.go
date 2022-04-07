@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	nmstateapi "github.com/nmstate/kubernetes-nmstate/api/shared"
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -81,7 +82,7 @@ type OpenStackNetAttachmentStatus struct {
 	// TODO: It would be simpler, perhaps, to just have Conditions and get rid of CurrentState,
 	// but we are using the same approach in other CRDs for now anyhow
 	// Conditions - conditions to display in the OpenShift GUI, which reflect CurrentState
-	Conditions ConditionList `json:"conditions,omitempty" optional:"true"`
+	Conditions ospdirectorshared.ConditionList `json:"conditions,omitempty" optional:"true"`
 
 	// AttachType of the OpenStackNetAttachment
 	AttachType AttachType `json:"attachType"`
@@ -111,9 +112,9 @@ const (
 	//
 
 	// NetAttachCondReasonCreated - osnetattachment created
-	NetAttachCondReasonCreated ConditionReason = "OpenStackNetAttachCreated"
+	NetAttachCondReasonCreated ospdirectorshared.ConditionReason = "OpenStackNetAttachCreated"
 	// NetAttachCondReasonCreateError - error creating osnetatt object
-	NetAttachCondReasonCreateError ConditionReason = "OpenStackNetAttachCreateError"
+	NetAttachCondReasonCreateError ospdirectorshared.ConditionReason = "OpenStackNetAttachCreateError"
 )
 
 // IsReady - Is this resource in its fully-configured (quiesced) state?

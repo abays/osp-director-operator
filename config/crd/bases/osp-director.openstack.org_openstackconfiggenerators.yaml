@@ -109,7 +109,9 @@ spec:
                 type: boolean
               roles:
                 description: Optional. List of Roles used to limit which roles have
-                  playbooks generated. If missing all roles are included.
+                  network information injected during playbook generation. By default
+                  the list is empty and all Roles are included for Baremetal/Vmsets
+                  within the project.
                 items:
                   type: string
                 type: array

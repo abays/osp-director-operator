@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+   name: storage-version-migration
+   namespace: openstack
+   labels:
+     app: "storage-version-migration"
+spec:
+   ttlSecondsAfterFinished: 600
+   backoffLimit: 10
+   template:
+     metadata:
+       labels:
+         app: "storage-version-migration"
+     spec:
+       serviceAccountName: osp-director-operator-post-install-job
+       restartPolicy: OnFailure
+       containers:
+          - name: migrate
+            image: ko://knative.dev/pkg/apiextensions/storageversion/cmd/migrate
+            args:
+               - "openstackbackuprequests.osp-director.openstack.org"

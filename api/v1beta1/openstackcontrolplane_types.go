@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"fmt"
 
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -130,7 +131,7 @@ type OpenStackVirtualMachineRoleSpec struct {
 // OpenStackControlPlaneStatus defines the observed state of OpenStackControlPlane
 type OpenStackControlPlaneStatus struct {
 	VIPStatus          map[string]HostStatus                   `json:"vipStatus,omitempty"`
-	Conditions         ConditionList                           `json:"conditions,omitempty" optional:"true"`
+	Conditions         ospdirectorshared.ConditionList         `json:"conditions,omitempty" optional:"true"`
 	ProvisioningStatus OpenStackControlPlaneProvisioningStatus `json:"provisioningStatus,omitempty"`
 
 	// OSPVersion the OpenStack version to render templates files
@@ -169,21 +170,21 @@ const (
 	//
 
 	// ControlPlaneReasonNetNotFound - osctlplane not found
-	ControlPlaneReasonNetNotFound ConditionReason = "CtlPlaneNotFound"
+	ControlPlaneReasonNetNotFound ospdirectorshared.ConditionReason = "CtlPlaneNotFound"
 	// ControlPlaneReasonNotSupportedVersion - osctlplane not found
-	ControlPlaneReasonNotSupportedVersion ConditionReason = "CtlPlaneNotSupportedVersion"
+	ControlPlaneReasonNotSupportedVersion ospdirectorshared.ConditionReason = "CtlPlaneNotSupportedVersion"
 	// ControlPlaneReasonTripleoPasswordsSecretError - Tripleo password secret error
-	ControlPlaneReasonTripleoPasswordsSecretError ConditionReason = "TripleoPasswordsSecretError"
+	ControlPlaneReasonTripleoPasswordsSecretError ospdirectorshared.ConditionReason = "TripleoPasswordsSecretError"
 	// ControlPlaneReasonTripleoPasswordsSecretNotFound - Tripleo password secret not found
-	ControlPlaneReasonTripleoPasswordsSecretNotFound ConditionReason = "TripleoPasswordsSecretNotFound"
+	ControlPlaneReasonTripleoPasswordsSecretNotFound ospdirectorshared.ConditionReason = "TripleoPasswordsSecretNotFound"
 	// ControlPlaneReasonTripleoPasswordsSecretCreateError - Tripleo password secret create error
-	ControlPlaneReasonTripleoPasswordsSecretCreateError ConditionReason = "TripleoPasswordsSecretCreateError"
+	ControlPlaneReasonTripleoPasswordsSecretCreateError ospdirectorshared.ConditionReason = "TripleoPasswordsSecretCreateError"
 	// ControlPlaneReasonDeploymentSSHKeysSecretError - Deployment SSH Keys Secret Error
-	ControlPlaneReasonDeploymentSSHKeysSecretError ConditionReason = "DeploymentSSHKeysSecretError"
+	ControlPlaneReasonDeploymentSSHKeysSecretError ospdirectorshared.ConditionReason = "DeploymentSSHKeysSecretError"
 	// ControlPlaneReasonDeploymentSSHKeysGenError - Deployment SSH Keys generation Error
-	ControlPlaneReasonDeploymentSSHKeysGenError ConditionReason = "DeploymentSSHKeysGenError"
+	ControlPlaneReasonDeploymentSSHKeysGenError ospdirectorshared.ConditionReason = "DeploymentSSHKeysGenError"
 	// ControlPlaneReasonDeploymentSSHKeysSecretCreateOrUpdateError - Deployment SSH Keys Secret Crate or Update Error
-	ControlPlaneReasonDeploymentSSHKeysSecretCreateOrUpdateError ConditionReason = "DeploymentSSHKeysSecretCreateOrUpdateError"
+	ControlPlaneReasonDeploymentSSHKeysSecretCreateOrUpdateError ospdirectorshared.ConditionReason = "DeploymentSSHKeysSecretCreateOrUpdateError"
 )
 
 // IsReady - Is this resource in its fully-configured (quiesced) state?

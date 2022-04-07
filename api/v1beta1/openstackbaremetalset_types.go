@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -57,7 +58,7 @@ type OpenStackBaremetalSetSpec struct {
 
 // OpenStackBaremetalSetStatus defines the observed state of OpenStackBaremetalSet
 type OpenStackBaremetalSetStatus struct {
-	Conditions         ConditionList                           `json:"conditions,omitempty" optional:"true"`
+	Conditions         ospdirectorshared.ConditionList         `json:"conditions,omitempty" optional:"true"`
 	ProvisioningStatus OpenStackBaremetalSetProvisioningStatus `json:"provisioningStatus,omitempty"`
 	BaremetalHosts     map[string]HostStatus                   `json:"baremetalHosts,omitempty"`
 }
@@ -95,40 +96,40 @@ const (
 	//
 
 	// BaremetalHostCondReasonListError - metal3 bmh list objects error
-	BaremetalHostCondReasonListError ConditionReason = "BaremetalHostListError"
+	BaremetalHostCondReasonListError ospdirectorshared.ConditionReason = "BaremetalHostListError"
 	// BaremetalHostCondReasonGetError - error get metal3 bmh object
-	BaremetalHostCondReasonGetError ConditionReason = "BaremetalHostGetError"
+	BaremetalHostCondReasonGetError ospdirectorshared.ConditionReason = "BaremetalHostGetError"
 	// BaremetalHostCondReasonUpdateError - error updating metal3 bmh object
-	BaremetalHostCondReasonUpdateError ConditionReason = "BaremetalHostUpdateError"
+	BaremetalHostCondReasonUpdateError ospdirectorshared.ConditionReason = "BaremetalHostUpdateError"
 	// BaremetalHostCondReasonCloudInitSecretError - error creating cloud-init secrets for metal3
-	BaremetalHostCondReasonCloudInitSecretError ConditionReason = "BaremetalHostCloudInitSecretError"
+	BaremetalHostCondReasonCloudInitSecretError ospdirectorshared.ConditionReason = "BaremetalHostCloudInitSecretError"
 
 	//
 	// osbms
 	//
 
 	// BaremetalSetCondReasonError - General error getting the OSBms object
-	BaremetalSetCondReasonError ConditionReason = "BaremetalSetError"
+	BaremetalSetCondReasonError ospdirectorshared.ConditionReason = "BaremetalSetError"
 	// BaremetalSetCondReasonBaremetalHostStatusNotFound - bare metal host status not found
-	BaremetalSetCondReasonBaremetalHostStatusNotFound ConditionReason = "BaremetalHostStatusNotFound"
+	BaremetalSetCondReasonBaremetalHostStatusNotFound ospdirectorshared.ConditionReason = "BaremetalHostStatusNotFound"
 	// BaremetalSetCondReasonUserDataSecretDeleteError - error deleting user data secret
-	BaremetalSetCondReasonUserDataSecretDeleteError ConditionReason = "BaremetalSetUserDataSecretDeleteError"
+	BaremetalSetCondReasonUserDataSecretDeleteError ospdirectorshared.ConditionReason = "BaremetalSetUserDataSecretDeleteError"
 	// BaremetalSetCondReasonNetworkDataSecretDeleteError - error deleting network data secret
-	BaremetalSetCondReasonNetworkDataSecretDeleteError ConditionReason = "BaremetalSetNetworkDataSecretDeleteError"
+	BaremetalSetCondReasonNetworkDataSecretDeleteError ospdirectorshared.ConditionReason = "BaremetalSetNetworkDataSecretDeleteError"
 	// BaremetalSetCondReasonScaleDownInsufficientAnnotatedHosts - not enough nodes annotated for deletion
-	BaremetalSetCondReasonScaleDownInsufficientAnnotatedHosts ConditionReason = "BaremetalSetScaleDownInsufficientAnnotatedHosts"
+	BaremetalSetCondReasonScaleDownInsufficientAnnotatedHosts ospdirectorshared.ConditionReason = "BaremetalSetScaleDownInsufficientAnnotatedHosts"
 	// BaremetalSetCondReasonScaleUpInsufficientHosts - not enough nodes for requested host count
-	BaremetalSetCondReasonScaleUpInsufficientHosts ConditionReason = "BaremetalSetScaleUpInsufficientHosts"
+	BaremetalSetCondReasonScaleUpInsufficientHosts ospdirectorshared.ConditionReason = "BaremetalSetScaleUpInsufficientHosts"
 	// BaremetalSetCondReasonProvisioningErrors - errors during bmh provisioning
-	BaremetalSetCondReasonProvisioningErrors ConditionReason = "BaremetalSetProvisioningErrors"
+	BaremetalSetCondReasonProvisioningErrors ospdirectorshared.ConditionReason = "BaremetalSetProvisioningErrors"
 	// BaremetalSetCondReasonVirtualMachineProvisioning - bmh provisioning in progress
-	BaremetalSetCondReasonVirtualMachineProvisioning ConditionReason = "BaremetalHostProvisioning"
+	BaremetalSetCondReasonVirtualMachineProvisioning ospdirectorshared.ConditionReason = "BaremetalHostProvisioning"
 	// BaremetalSetCondReasonVirtualMachineDeprovisioning - bmh deprovisioning in progress
-	BaremetalSetCondReasonVirtualMachineDeprovisioning ConditionReason = "BaremetalHostDeprovisioning"
+	BaremetalSetCondReasonVirtualMachineDeprovisioning ospdirectorshared.ConditionReason = "BaremetalHostDeprovisioning"
 	// BaremetalSetCondReasonVirtualMachineProvisioned - bmh provisioned
-	BaremetalSetCondReasonVirtualMachineProvisioned ConditionReason = "BaremetalHostProvisioned"
+	BaremetalSetCondReasonVirtualMachineProvisioned ospdirectorshared.ConditionReason = "BaremetalHostProvisioned"
 	// BaremetalSetCondReasonVirtualMachineCountZero - no bmh requested
-	BaremetalSetCondReasonVirtualMachineCountZero ConditionReason = "BaremetalHostCountZero"
+	BaremetalSetCondReasonVirtualMachineCountZero ospdirectorshared.ConditionReason = "BaremetalHostCountZero"
 )
 
 // GetHostnames -

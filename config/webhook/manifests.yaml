@@ -260,6 +260,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-osp-director-openstack-org-v1beta2-openstackbackuprequest
+  failurePolicy: Fail
+  name: vopenstackbackuprequest2.kb.io
+  rules:
+  - apiGroups:
+    - osp-director.openstack.org
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - openstackbackuprequests
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-osp-director-openstack-org-v1beta1-openstackbackup
   failurePolicy: Fail
   name: vopenstackbackup.kb.io

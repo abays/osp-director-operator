@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	common "github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
 	controlplane "github.com/openstack-k8s-operators/osp-director-operator/pkg/controlplane"
@@ -24,7 +25,7 @@ func EnsureIPs(
 	ctx context.Context,
 	r common.ReconcilerCommon,
 	obj client.Object,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	name string,
 	networks []string,
 	hostCount int,
@@ -67,7 +68,7 @@ func EnsureIPs(
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to get %s %s ", ipSet.Kind, ipSet.Name)
 		cond.Reason = ospdirectorv1beta1.IPSetCondReasonError
-		cond.Type = ospdirectorv1beta1.CommonCondTypeError
+		cond.Type = ospdirectorshared.CommonCondTypeError
 		err = common.WrapErrorForObject(cond.Message, obj, err)
 
 		return status, reconcile.Result{}, err
@@ -79,7 +80,7 @@ func EnsureIPs(
 	if len(ipSet.Status.Hosts) < hostCount {
 		cond.Message = fmt.Sprintf("Waiting on hosts to be created on IPSet %v - %v", len(ipSet.Status.Hosts), hostCount)
 		cond.Reason = ospdirectorv1beta1.IPSetCondReasonWaitingOnHosts
-		cond.Type = ospdirectorv1beta1.CommonCondTypeWaiting
+		cond.Type = ospdirectorshared.CommonCondTypeWaiting
 
 		return status, reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
@@ -100,7 +101,7 @@ func EnsureIPs(
 	//
 	osNetCfg, err := ospdirectorv1beta1.GetOsNetCfg(r.GetClient(), obj.GetNamespace(), obj.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel])
 	if err != nil {
-		cond.Type = ospdirectorv1beta1.CommonCondTypeError
+		cond.Type = ospdirectorshared.CommonCondTypeError
 		cond.Reason = ospdirectorv1beta1.NetConfigCondReasonError
 		cond.Message = fmt.Sprintf("error getting OpenStackNetConfig %s: %s",
 			obj.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel],
@@ -136,7 +137,7 @@ func createOrUpdateIPSet(
 	ctx context.Context,
 	r common.ReconcilerCommon,
 	obj client.Object,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	name string,
 	networks []string,
 	hostCount int,
@@ -175,8 +176,8 @@ func createOrUpdateIPSet(
 		err := controllerutil.SetControllerReference(obj, ipSet, r.GetScheme())
 		if err != nil {
 			cond.Message = fmt.Sprintf("Error set controller reference for %s %s", ipSet.Kind, ipSet.Name)
-			cond.Reason = ospdirectorv1beta1.CommonCondReasonControllerReferenceError
-			cond.Type = ospdirectorv1beta1.CommonCondTypeError
+			cond.Reason = ospdirectorshared.CommonCondReasonControllerReferenceError
+			cond.Type = ospdirectorshared.CommonCondTypeError
 			err = common.WrapErrorForObject(cond.Message, obj, err)
 
 			return err
@@ -187,7 +188,7 @@ func createOrUpdateIPSet(
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to create or update %s %s ", ipSet.Kind, ipSet.Name)
 		cond.Reason = ospdirectorv1beta1.IPSetCondReasonError
-		cond.Type = ospdirectorv1beta1.CommonCondTypeError
+		cond.Type = ospdirectorshared.CommonCondTypeError
 		err = common.WrapErrorForObject(cond.Message, obj, err)
 
 		return ipSet, err
@@ -204,7 +205,7 @@ func createOrUpdateIPSet(
 		)
 	}
 	cond.Reason = ospdirectorv1beta1.IPSetCondReasonCreated
-	cond.Type = ospdirectorv1beta1.CommonCondTypeCreated
+	cond.Type = ospdirectorshared.CommonCondTypeCreated
 
 	return ipSet, nil
 }
@@ -213,7 +214,7 @@ func createOrUpdateIPSet(
 // SyncIPsetStatus - sync relevant information from IPSet to CR status
 //
 func SyncIPsetStatus(
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	instanceStatus map[string]ospdirectorv1beta1.HostStatus,
 	ipsetHostStatus ospdirectorv1beta1.HostStatus,
 ) ospdirectorv1beta1.HostStatus {

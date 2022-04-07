@@ -43,6 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	metal3v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	ospdirectorshared "github.com/openstack-k8s-operators/osp-director-operator/api/shared"
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/osp-director-operator/pkg/baremetalset"
 	common "github.com/openstack-k8s-operators/osp-director-operator/pkg/common"
@@ -111,7 +112,7 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 	//
 	// initialize condition
 	//
-	cond := &ospdirectorv1beta1.Condition{}
+	cond := &ospdirectorshared.Condition{}
 
 	// If BaremetalHosts status map is nil, create it
 	if instance.Status.BaremetalHosts == nil {
@@ -129,7 +130,7 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 		)
 	}
 
-	defer func(cond *ospdirectorv1beta1.Condition) {
+	defer func(cond *ospdirectorshared.Condition) {
 		//
 		// Update object conditions
 		//
@@ -198,8 +199,8 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Update(ctx, instance)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to update %s %s", instance.Kind, instance.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonRemoveFinalizerError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonRemoveFinalizerError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -265,8 +266,8 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 		err = r.Update(ctx, instance)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to update %s %s", instance.Kind, instance.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonAddOSNetLabelError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonAddOSNetLabelError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -301,11 +302,11 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 		r,
 		instance,
 		cond,
-		ospdirectorv1beta1.ConditionDetails{
-			ConditionNotFoundType:   ospdirectorv1beta1.CommonCondTypeWaiting,
-			ConditionNotFoundReason: ospdirectorv1beta1.CommonCondReasonDeploymentSecretMissing,
-			ConditionErrorType:      ospdirectorv1beta1.CommonCondTypeError,
-			ConditionErrordReason:   ospdirectorv1beta1.CommonCondReasonDeploymentSecretError,
+		ospdirectorshared.ConditionDetails{
+			ConditionNotFoundType:   ospdirectorshared.CommonCondTypeWaiting,
+			ConditionNotFoundReason: ospdirectorshared.CommonCondReasonDeploymentSecretMissing,
+			ConditionErrorType:      ospdirectorshared.CommonCondTypeError,
+			ConditionErrordReason:   ospdirectorshared.CommonCondReasonDeploymentSecretError,
 		},
 		instance.Spec.DeploymentSSHSecret,
 		20,
@@ -371,7 +372,7 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 	//
 	osNetCfg, err := ospdirectorv1beta1.GetOsNetCfg(r.GetClient(), instance.GetNamespace(), instance.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel])
 	if err != nil {
-		cond.Type = ospdirectorv1beta1.CommonCondTypeError
+		cond.Type = ospdirectorshared.CommonCondTypeError
 		cond.Reason = ospdirectorv1beta1.NetConfigCondReasonError
 		cond.Message = fmt.Sprintf("error getting OpenStackNetConfig %s: %s",
 			instance.GetLabels()[ospdirectorv1beta1.OpenStackNetConfigReconcileLabel],
@@ -410,30 +411,30 @@ func (r *OpenStackBaremetalSetReconciler) Reconcile(ctx context.Context, req ctr
 	instance.Status.ProvisioningStatus.ReadyCount = readyCount
 
 	if bmhErrors > 0 {
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonProvisioningErrors)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonProvisioningErrors)
 		cond.Message = fmt.Sprintf("%d BaremetalHost(s) encountered an error", bmhErrors)
 	} else {
 		switch readyCount := instance.Status.ProvisioningStatus.ReadyCount; {
 		case readyCount == instance.Spec.Count && readyCount == 0:
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeEmpty)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineCountZero)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeEmpty)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineCountZero)
 			cond.Message = "No BaremetalHost have been requested"
 		case readyCount == instance.Spec.Count:
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeProvisioned)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineProvisioned)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeProvisioned)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineProvisioned)
 			cond.Message = "All requested BaremetalHosts have been provisioned"
 		case readyCount < instance.Spec.Count:
 			// Only set this if readyCount is less than spec Count, and this reconciliation did not previously
 			// encounter the "ospdirectorv1beta1.BaremetalSetInsufficient" state, then provisioning is in progress
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeProvisioning)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineProvisioning)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeProvisioning)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineProvisioning)
 			cond.Message = "Provisioning of BaremetalHosts in progress"
 		default:
 			// Only set this if readyCount is less than spec Count, and this reconciliation did not previously
 			// encounter the "ospdirectorv1beta1.BaremetalSetInsufficient" state, then deprovisioning is in progress
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeDeprovisioning)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineDeprovisioning)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeDeprovisioning)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonVirtualMachineDeprovisioning)
 			cond.Message = "Deprovisioning of BaremetalHosts in progress"
 		}
 	}
@@ -493,7 +494,7 @@ func (r *OpenStackBaremetalSetReconciler) SetupWithManager(mgr ctrl.Manager) err
 func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) (*ospdirectorv1beta1.OpenStackProvisionServer, reconcile.Result, error) {
 	provisionServer := &ospdirectorv1beta1.OpenStackProvisionServer{}
 
@@ -526,8 +527,8 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 			err = controllerutil.SetControllerReference(instance, provisionServer, r.Scheme)
 			if err != nil {
 				cond.Message = fmt.Sprintf("Error set controller reference for %s %s", provisionServer.Kind, provisionServer.Name)
-				cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonControllerReferenceError)
-				cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+				cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonControllerReferenceError)
+				cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 				err = common.WrapErrorForObject(cond.Message, instance, err)
 
 				return err
@@ -538,8 +539,8 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to create or update %s %s ", provisionServer.Kind, provisionServer.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonCreateError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonCreateError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return provisionServer, ctrl.Result{}, err
@@ -555,8 +556,8 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		if op != controllerutil.OperationResultNone {
 			cond.Message = fmt.Sprintf("%s - operation: %s", cond.Message, string(op))
 		}
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonCreated)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeCreated)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonCreated)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeCreated)
 
 	} else {
 		err := r.Get(ctx, types.NamespacedName{Name: instance.Spec.ProvisionServerName, Namespace: instance.Namespace}, provisionServer)
@@ -564,14 +565,14 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 			timeout := 10
 
 			cond.Message = fmt.Sprintf("%s %s not found reconcile again in %d seconds", provisionServer.Kind, instance.Spec.ProvisionServerName, timeout)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonNotFound)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeWaiting)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonNotFound)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeWaiting)
 
 			return provisionServer, ctrl.Result{RequeueAfter: time.Duration(timeout) * time.Second}, nil
 		} else if err != nil {
 			cond.Message = fmt.Sprintf("Error getting %s %s", provisionServer.Kind, instance.Spec.ProvisionServerName)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.ProvisionServerCondTypeError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.ProvisionServerCondTypeError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return provisionServer, ctrl.Result{}, err
@@ -587,8 +588,8 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 			timeout,
 		)
 
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonProvisioning)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeWaiting)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.OpenStackProvisionServerCondReasonProvisioning)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeWaiting)
 
 		return provisionServer, ctrl.Result{RequeueAfter: time.Duration(timeout) * time.Second}, nil
 	}
@@ -600,8 +601,8 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 		provisionServer.Status.LocalImageURL,
 	)
 
-	cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondTypeProvisioning)
-	cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.OpenStackProvisionServerCondReasonProvisioned)
+	cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondTypeProvisioning)
+	cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.OpenStackProvisionServerCondReasonProvisioned)
 
 	return provisionServer, ctrl.Result{}, nil
 }
@@ -610,7 +611,7 @@ func (r *OpenStackBaremetalSetReconciler) provisionServerCreateOrUpdate(
 func (r *OpenStackBaremetalSetReconciler) doBMHDelete(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	removalAnnotatedBaremetalHosts []string,
 ) ([]string, error) {
 	deletedHosts := []string{}
@@ -627,8 +628,8 @@ func (r *OpenStackBaremetalSetReconciler) doBMHDelete(
 	)
 	if err != nil {
 		cond.Message = "Failed to get list of all BareMetalHost(s)"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonListError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonListError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
 
 		return deletedHosts, err
 	}
@@ -687,8 +688,8 @@ func (r *OpenStackBaremetalSetReconciler) doBMHDelete(
 		// If we can't satisfy the requested scale-down, explicitly state so
 		if bmhsRemovedCount < bmhsToRemoveCount {
 			cond.Message = fmt.Sprintf("Unable to find sufficient amount of BaremetalHost replicas annotated for scale-down (%d found and removed, %d requested)", bmhsRemovedCount, bmhsToRemoveCount)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonScaleDownInsufficientAnnotatedHosts)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeInsufficient)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonScaleDownInsufficientAnnotatedHosts)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeInsufficient)
 
 			common.LogForObject(
 				r,
@@ -707,7 +708,7 @@ func (r *OpenStackBaremetalSetReconciler) doBMHDelete(
 func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	osNetCfg *ospdirectorv1beta1.OpenStackNetConfig,
 	provisionServer *ospdirectorv1beta1.OpenStackProvisionServer,
 	sshSecret string,
@@ -723,8 +724,8 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	)
 	if err != nil {
 		cond.Message = "Failed to get list of all BareMetalHost(s)"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonListError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonListError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
 
 		return err
 	}
@@ -741,8 +742,8 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 	)
 	if err != nil {
 		cond.Message = "Failed to get list of all existing BareMetalHost(s)"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonListError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonListError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
 
 		return err
 	}
@@ -790,8 +791,8 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 				instance.Spec.Count,
 				len(existingBaremetalHosts.Items),
 				len(availableBaremetalHosts))
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonScaleUpInsufficientHosts)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeInsufficient)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonScaleUpInsufficientHosts)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeInsufficient)
 
 			common.LogForObject(
 				r,
@@ -848,7 +849,7 @@ func (r *OpenStackBaremetalSetReconciler) ensureBaremetalHosts(
 
 func (r *OpenStackBaremetalSetReconciler) getBmhHostRefStatus(
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	bmh string,
 ) (ospdirectorv1beta1.HostStatus, error) {
 
@@ -859,8 +860,8 @@ func (r *OpenStackBaremetalSetReconciler) getBmhHostRefStatus(
 	}
 
 	cond.Message = fmt.Sprintf("OpenStackBaremetalHostStatus for %s not found", bmh)
-	cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonBaremetalHostStatusNotFound)
-	cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
+	cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalSetCondReasonBaremetalHostStatusNotFound)
+	cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeError)
 
 	return ospdirectorv1beta1.HostStatus{}, k8s_errors.NewNotFound(corev1.Resource("OpenStackBaremetalHostStatus"), "not found")
 }
@@ -869,7 +870,7 @@ func (r *OpenStackBaremetalSetReconciler) getBmhHostRefStatus(
 func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	osNetCfg *ospdirectorv1beta1.OpenStackNetConfig,
 	bmh string,
 	localImageURL string,
@@ -897,8 +898,8 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 				// update status with host assignment
 				if err := r.Status().Update(context.Background(), instance); err != nil {
 					cond.Message = fmt.Sprintf("Failed to update CR status %v", err)
-					cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonCRStatusUpdateError)
-					cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+					cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonCRStatusUpdateError)
+					cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 					err = common.WrapErrorForObject(cond.Message, instance, err)
 
@@ -961,13 +962,13 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			cond.Message = fmt.Sprintf("OpenStackNet with NameLower %s not found!", netNameLower)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetNotFound)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetNotFound)
 		} else {
 			// Error reading the object - requeue the request.
 			cond.Message = fmt.Sprintf("Error getting OSNet with labelSelector %v", labelSelector)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOSNetError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOSNetError)
 		}
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -1014,8 +1015,8 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 	err = common.EnsureSecrets(ctx, r, instance, sts, &map[string]common.EnvSetter{})
 	if err != nil {
 		cond.Message = "Error creating metal3 cloud-init secrets"
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonCloudInitSecretError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonCloudInitSecretError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return err
@@ -1028,8 +1029,8 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 	err = r.Get(ctx, types.NamespacedName{Name: bmh, Namespace: "openshift-machine-api"}, foundBaremetalHost)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to get %s %s", foundBaremetalHost.Kind, foundBaremetalHost.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonGetError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonGetError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 		return err
 	}
@@ -1076,8 +1077,8 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 		err = r.Update(ctx, foundBaremetalHost)
 		if err != nil {
 			cond.Message = fmt.Sprintf("Failed to update %s %s", foundBaremetalHost.Kind, foundBaremetalHost.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonUpdateError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonUpdateError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 			return err
 		}
@@ -1111,15 +1112,15 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostProvision(
 func (r *OpenStackBaremetalSetReconciler) baremetalHostDeprovision(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 	bmh ospdirectorv1beta1.HostStatus,
 ) (string, error) {
 	baremetalHost := &metal3v1alpha1.BareMetalHost{}
 	err := r.Get(ctx, types.NamespacedName{Name: bmh.HostRef, Namespace: "openshift-machine-api"}, baremetalHost)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to get %s %s", baremetalHost.Kind, baremetalHost.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonGetError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonGetError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 		return "", err
 	}
@@ -1155,8 +1156,8 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostDeprovision(
 	err = r.Update(ctx, baremetalHost)
 	if err != nil {
 		cond.Message = fmt.Sprintf("Failed to update %s %s", baremetalHost.Kind, baremetalHost.Name)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonUpdateError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.BaremetalHostCondReasonUpdateError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 
 		return ospHostname, err
 	}
@@ -1191,7 +1192,7 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostDeprovision(
 func (r *OpenStackBaremetalSetReconciler) baremetalHostCleanup(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) error {
 	if instance.Status.BaremetalHosts != nil {
 		for _, bmh := range instance.Status.BaremetalHosts {
@@ -1214,7 +1215,7 @@ func (r *OpenStackBaremetalSetReconciler) baremetalHostCleanup(
 func (r *OpenStackBaremetalSetReconciler) deleteOwnerRefLabeledObjects(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) error {
 
 	labelSelectorMap := common.GetLabels(instance, baremetalset.AppLabel, map[string]string{})
@@ -1230,8 +1231,8 @@ func (r *OpenStackBaremetalSetReconciler) deleteOwnerRefLabeledObjects(
 		err = r.Delete(ctx, secret, &client.DeleteOptions{})
 		if err != nil {
 			cond.Message = fmt.Sprintf("Error deleting OwnerRefLabeledObjects %s", secret.Name)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonOwnerRefLabeledObjectsDeleteError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonOwnerRefLabeledObjectsDeleteError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return err
@@ -1428,7 +1429,7 @@ func (r *OpenStackBaremetalSetReconciler) verifyHardwareMatch(
 func (r *OpenStackBaremetalSetReconciler) getPasswordSecret(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) (*corev1.Secret, reconcile.Result, error) {
 	// check if specified password secret exists before creating the computes
 	passwordSecret, _, err := common.GetSecret(ctx, r, instance.Spec.PasswordSecret, instance.Namespace)
@@ -1436,15 +1437,15 @@ func (r *OpenStackBaremetalSetReconciler) getPasswordSecret(
 		if k8s_errors.IsNotFound(err) {
 			timeout := 30
 			cond.Message = fmt.Sprintf("PasswordSecret %s not found but specified in CR, next reconcile in %d s", instance.Spec.PasswordSecret, timeout)
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonSecretMissing)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeWaiting)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonSecretMissing)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorv1beta1.BaremetalSetCondTypeWaiting)
 
 			return passwordSecret, ctrl.Result{RequeueAfter: time.Duration(timeout) * time.Second}, nil
 		}
 		// Error reading the object - requeue the request.
 		cond.Message = fmt.Sprintf("Error getting TripleoPasswordsSecret %s", instance.Spec.PasswordSecret)
-		cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.ControlPlaneReasonTripleoPasswordsSecretCreateError)
-		cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+		cond.Reason = ospdirectorshared.ConditionReason(ospdirectorv1beta1.ControlPlaneReasonTripleoPasswordsSecretCreateError)
+		cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 		err = common.WrapErrorForObject(cond.Message, instance, err)
 
 		return passwordSecret, ctrl.Result{}, err
@@ -1460,7 +1461,7 @@ func (r *OpenStackBaremetalSetReconciler) getPasswordSecret(
 func (r *OpenStackBaremetalSetReconciler) checkBMHsAnnotatedForDeletion(
 	ctx context.Context,
 	instance *ospdirectorv1beta1.OpenStackBaremetalSet,
-	cond *ospdirectorv1beta1.Condition,
+	cond *ospdirectorshared.Condition,
 ) ([]string, error) {
 
 	// check for deletion marked BMH
@@ -1518,8 +1519,8 @@ func (r *OpenStackBaremetalSetReconciler) checkBMHsAnnotatedForDeletion(
 		err = r.Status().Update(context.Background(), instance)
 		if err != nil {
 			cond.Message = "Failed to update CR status for annotated for deletion marked VMs"
-			cond.Reason = ospdirectorv1beta1.ConditionReason(ospdirectorv1beta1.CommonCondReasonCRStatusUpdateError)
-			cond.Type = ospdirectorv1beta1.ConditionType(ospdirectorv1beta1.CommonCondTypeError)
+			cond.Reason = ospdirectorshared.ConditionReason(ospdirectorshared.CommonCondReasonCRStatusUpdateError)
+			cond.Type = ospdirectorshared.ConditionType(ospdirectorshared.CommonCondTypeError)
 			err = common.WrapErrorForObject(cond.Message, instance, err)
 
 			return deletionAnnotatedBMHs, err
