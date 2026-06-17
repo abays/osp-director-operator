@@ -1,6 +1,6 @@
 module github.com/openstack-k8s-operators/osp-director-operator
 
-go 1.19
+go 1.23
 
 exclude k8s.io/cluster-bootstrap v0.0.0
 
@@ -22,7 +22,7 @@ require (
 	github.com/openshift/sriov-network-operator v0.0.0-20201204053545-49045c36efb9
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
-	github.com/tidwall/gjson v1.14.4
+	github.com/tidwall/gjson v1.19.0
 	golang.org/x/crypto v0.8.0
 	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0
@@ -212,5 +212,4 @@ replace (
 
 	// pinned because no tag supports 1.18 yet
 	sigs.k8s.io/structured-merge-diff => sigs.k8s.io/structured-merge-diff v1.0.1-0.20191108220359-b1b620dd3f06
-
 )
