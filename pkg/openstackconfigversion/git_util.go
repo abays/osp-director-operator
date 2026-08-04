@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -38,7 +39,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
 
-	crypto_ssh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 
 	"github.com/go-logr/logr"
 	ospdirectorv1beta1 "github.com/openstack-k8s-operators/osp-director-operator/api/v1beta1"
@@ -144,6 +145,28 @@ func SyncGit(
 	log.Info("GitRepo foundSecret")
 	pkey := foundSecret.Data["git_ssh_identity"]
 
+	knownHostsData, ok := foundSecret.Data["git_ssh_known_hosts"]
+	if !ok || len(knownHostsData) == 0 {
+		return nil, fmt.Errorf("git Secret %s is missing required key git_ssh_known_hosts", inst.Spec.GitSecret)
+	}
+
+	knownHostsFile, err := os.CreateTemp("", "known_hosts")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary known_hosts file: %w", err)
+	}
+	defer os.Remove(knownHostsFile.Name())
+
+	if _, err := knownHostsFile.Write(knownHostsData); err != nil {
+		knownHostsFile.Close()
+		return nil, fmt.Errorf("failed to write known_hosts data: %w", err)
+	}
+	knownHostsFile.Close()
+
+	hostKeyCallback, err := knownhosts.New(knownHostsFile.Name())
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse known_hosts: %w", err)
+	}
+
 	gitURL := string(foundSecret.Data["git_url"])
 	gitEndpoint, err := transport.NewEndpoint(gitURL)
 	if err != nil {
@@ -152,11 +175,11 @@ func SyncGit(
 	}
 
 	publicKeys, err := ssh.NewPublicKeys(gitEndpoint.User, pkey, "")
-	publicKeys.HostKeyCallback = crypto_ssh.InsecureIgnoreHostKey()
 	if err != nil {
 		log.Info(fmt.Sprintf("generate publickeys failed: %s\n", err.Error()))
 		return nil, err
 	}
+	publicKeys.HostKeyCallback = hostKeyCallback
 
 	// Attempt Clone with current transport capabilities
 	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
